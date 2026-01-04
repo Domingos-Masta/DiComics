@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { SettingsService } from '../../services/settings.service';
 import { IndexingService } from '../../services/indexing.service';
 import { ComicSource, AppSettings } from '../../models/comic.model';
+import { CbzService } from '../../services/cbz.service';
 
 declare const window: any;
 
@@ -26,25 +27,26 @@ export class SettingsComponent implements OnInit {
     processed: 0,
     currentFile: ''
   };
-  
+
   // Form models
   newSourcePath = '';
   newSourceName = '';
   scanSubdirectories = true;
   maxScanDepth = 5;
-  
+
   // Available file extensions
   availableExtensions = [
     { ext: '.cbz', name: 'CBZ (Comic Book ZIP)', checked: true },
     { ext: '.zip', name: 'ZIP Archive', checked: true },
-    { ext: '.cbr', name: 'CBR (Comic Book RAR)', checked: false },
-    { ext: '.rar', name: 'RAR Archive', checked: false },
+    { ext: '.cbr', name: 'CBR (Comic Book RAR)', checked: true }, // Enable by default
+    { ext: '.rar', name: 'RAR Archive', checked: true }, // Enable by default
     { ext: '.pdf', name: 'PDF Document', checked: false },
     { ext: '.epub', name: 'EPUB eBook', checked: false }
   ];
 
   constructor(
     private settingsService: SettingsService,
+    private cbzService: CbzService,
     private indexingService: IndexingService,
     public router: Router
   ) {
@@ -54,7 +56,7 @@ export class SettingsComponent implements OnInit {
   ngOnInit(): void {
     this.loadSources();
     this.updateFormFromSettings();
-    
+
     // Monitor indexing progress
     setInterval(() => {
       if (this.scanning) {
@@ -65,7 +67,7 @@ export class SettingsComponent implements OnInit {
 
   async addSource(): Promise<void> {
     if (!this.newSourcePath) return;
-    
+
     const source: ComicSource = {
       id: this.generateId(),
       path: this.newSourcePath,
@@ -75,10 +77,10 @@ export class SettingsComponent implements OnInit {
       totalComics: 0,
       type: 'directory'
     };
-    
+
     this.settingsService.addComicSource(source);
     this.loadSources();
-    
+
     // Clear form
     this.newSourcePath = '';
     this.newSourceName = '';
@@ -110,14 +112,14 @@ export class SettingsComponent implements OnInit {
   async testSource(sourceId: string): Promise<void> {
     const source = this.sources.find(s => s.id === sourceId);
     if (!source) return;
-    
+
     try {
       const result = await window.electronAPI?.getDirectoryInfo?.(source.path);
       if (result?.success) {
         alert(`Directory scan successful!\n\n` +
-              `Name: ${result.name}\n` +
-              `Total files: ${result.totalFiles}\n` +
-              `Comic files: ${result.comicFiles}`);
+          `Name: ${result.name}\n` +
+          `Total files: ${result.totalFiles}\n` +
+          `Comic files: ${result.comicFiles}`);
       } else {
         alert('Failed to scan directory: ' + (result?.error || 'Unknown error'));
       }
@@ -133,23 +135,23 @@ export class SettingsComponent implements OnInit {
     }
   }
 
- async startIndexing(): Promise<void> {
+  async startIndexing(): Promise<void> {
     if (this.scanning) return;
-    
+
     this.scanning = true;
     this.progress = { total: 0, processed: 0, currentFile: '' };
-    
+
     try {
       const result = await this.indexingService.indexAllSources();
-      
+
       // Notify parent component (Home) that indexing completed
       this.settingsChanged.emit();
-      
+
       alert(`Indexing completed!\n\n` +
-            `Added: ${result.added} new comics\n` +
-            `Updated: ${result.updated} comics\n` +
-            `Removed: ${result.removed} comics`);
-      
+        `Added: ${result.added} new comics\n` +
+        `Updated: ${result.updated} comics\n` +
+        `Removed: ${result.removed} comics`);
+
     } catch (error: any) {
       alert('Indexing failed: ' + error.message);
     } finally {
@@ -159,7 +161,7 @@ export class SettingsComponent implements OnInit {
 
   async quickScan(): Promise<void> {
     if (this.scanning) return;
-    
+
     this.scanning = true;
     try {
       const newFiles = await this.indexingService.quickScan();
@@ -182,7 +184,7 @@ export class SettingsComponent implements OnInit {
     const extensions = this.availableExtensions
       .filter(ext => ext.checked)
       .map(ext => ext.ext);
-    
+
     const updatedSettings: AppSettings = {
       ...this.settings,
       autoIndexing: this.settings.autoIndexing,
@@ -191,13 +193,13 @@ export class SettingsComponent implements OnInit {
       fileExtensions: extensions,
       excludePatterns: this.settings.excludePatterns
     };
-    
+
     this.settingsService.saveSettings(updatedSettings);
     this.settings = updatedSettings;
-    
+
     // Notify parent component
     this.settingsChanged.emit();
-    
+
     alert('Settings saved successfully!');
   }
 
@@ -218,7 +220,7 @@ export class SettingsComponent implements OnInit {
   private updateFormFromSettings(): void {
     this.scanSubdirectories = this.settings.scanSubdirectories;
     this.maxScanDepth = this.settings.maxScanDepth;
-    
+
     // Update extension checkboxes
     this.availableExtensions.forEach(ext => {
       ext.checked = this.settings.fileExtensions.includes(ext.ext);
@@ -244,6 +246,22 @@ export class SettingsComponent implements OnInit {
   getProgressPercent(): number {
     if (this.progress.total === 0) return 0;
     return Math.round((this.progress.processed / this.progress.total) * 100);
+  }
+
+  async testComicFile(filePath: string): Promise<void> {
+    try {
+      const result = await this.cbzService.testComicFile(filePath);
+      if (result.success) {
+        alert(`Comic file test successful!\n\n` +
+          `Format: ${result.type || 'unknown'}\n` +
+          `Pages: ${result.totalPages}\n` +
+          `Status: ${result.success ? 'OK' : 'Failed'}`);
+      } else {
+        alert(`Comic file test failed:\n\n${result.error}`);
+      }
+    } catch (error: any) {
+      alert(`Error testing comic file: ${error.message}`);
+    }
   }
 }
 

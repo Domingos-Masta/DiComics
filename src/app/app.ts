@@ -1,6 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
-import { CommonModule } from '@angular/common';
+
 import { SplashComponent } from './components/splash/splash.component';
 import { IndexingService } from './services/indexing.service';
 import { SettingsService } from './services/settings.service';
@@ -9,7 +9,7 @@ import { CbzService } from './services/cbz.service';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, RouterOutlet, SplashComponent],
+  imports: [RouterOutlet, SplashComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

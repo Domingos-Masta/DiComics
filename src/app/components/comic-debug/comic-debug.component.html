@@ -1,0 +1,35 @@
+ <div class="debug-container">
+      <h2>Comic File Debugger</h2>
+      
+      <div class="debug-section">
+        <h3>Test Single Comic File</h3>
+        <div class="file-input">
+          <input type="text" [(ngModel)]="testFilePath" placeholder="Enter file path">
+          <button (click)="browseFile()">Browse</button>
+          <button (click)="testFile()" [disabled]="!testFilePath">Test File</button>
+        </div>
+        
+        <div *ngIf="testResult" class="result">
+          <h4>Test Result:</h4>
+          <pre>{{ testResult | json }}</pre>
+          <button (click)="clearResult()">Clear</button>
+        </div>
+      </div>
+      
+      <div class="debug-section">
+        <h3>Supported Formats</h3>
+        <div *ngIf="supportedFormats">
+          <p>Comic Formats:</p>
+          <ul>
+            <li *ngFor="let format of supportedFormats.formats">
+              {{ format.ext }} - {{ format.name }} ({{ format.type }})
+            </li>
+          </ul>
+          <p>Image Formats:</p>
+          <ul>
+            <li *ngFor="let img of supportedFormats.imageFormats">{{ img }}</li>
+          </ul>
+        </div>
+        <button (click)="loadSupportedFormats()">Load Formats</button>
+      </div>
+    </div>

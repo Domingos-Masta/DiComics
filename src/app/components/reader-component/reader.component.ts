@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, HostListener, AfterViewInit, ElementRef, ViewChild, Renderer2 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { CbzService } from '../../services/cbz.service';
 import { StorageService } from '../../services/storage.service';
@@ -8,7 +8,7 @@ import { Comic, ComicPage, ReadingProgress } from '../../models/comic.model';
 
 @Component({
   selector: 'app-reader',
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './reader.component.html',
   styleUrls: ['./reader.component.scss']
 })
@@ -92,7 +92,7 @@ export class ReaderComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.loading = true;
     try {
-      const result = await this.cbzService.readCBZ(this.comic.filePath);
+      const result = await this.cbzService.readBDHQ(this.comic.filePath);
       this.pages = result.pages;
 
       if (this.comic.totalPages !== result.totalPages) {

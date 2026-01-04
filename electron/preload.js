@@ -2,7 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
     selectFiles: () => ipcRenderer.invoke('select-files'),
-    readCBZ: (filePath) => ipcRenderer.invoke('read-bdhq', filePath),
+    readBDHQ: (filePath) => ipcRenderer.invoke('read-bdhq', filePath),
     extractCover: (filePath) => ipcRenderer.invoke('extract-cover', filePath),
     getFileInfo: (filePath) => ipcRenderer.invoke('get-file-info', filePath),
 
@@ -16,5 +16,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // New debugging APIs
     fileExists: (filePath) => ipcRenderer.invoke('file-exists', filePath),
     getFileStats: (filePath) => ipcRenderer.invoke('get-file-stats', filePath),
-    readDirectory: (dirPath) => ipcRenderer.invoke('read-directory', dirPath)
+    readDirectory: (dirPath) => ipcRenderer.invoke('read-directory', dirPath),
+
+    // New comic reading APIs
+    testComicFile: (filePath) => ipcRenderer.invoke('test-comic-file', filePath),
+    getSupportedFormats: () => ipcRenderer.invoke('get-supported-formats'),
+
+    // Enhanced APIs
+    checkComicFile: (filePath) => ipcRenderer.invoke('check-comic-file', filePath),
+    getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
+    testRarExtraction: (filePath) => ipcRenderer.invoke('test-rar-extraction', filePath)
 });
