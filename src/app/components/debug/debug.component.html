@@ -1,0 +1,8 @@
+<div class="debug-container">
+      <h2>Debug Directory Scanning</h2>
+      <button (click)="testScan()">Test Directory Scan</button>
+      <div *ngIf="scanResult">
+        <h3>Scan Result:</h3>
+        <pre>{{ scanResult | json }}</pre>
+      </div>
+    </div>

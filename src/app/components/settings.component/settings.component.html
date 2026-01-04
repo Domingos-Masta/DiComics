@@ -1,0 +1,314 @@
+<div class="settings-container">
+  <!-- Header -->
+  <header class="settings-header">
+    <button class="back-btn" (click)="router.navigate(['/'])">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M19 12H5M12 19l-7-7 7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Back to Library
+    </button>
+    <h1>Settings</h1>
+  </header>
+
+  <div class="settings-content">
+    <!-- Directory Sources Section -->
+    <section class="settings-section">
+      <div class="section-header">
+        <h2>Comic Sources</h2>
+        <p class="section-description">Add directories containing your comic files (CBZ/ZIP)</p>
+      </div>
+
+      <!-- Add Source Form -->
+      <div class="add-source-form glass-effect">
+        <div class="form-group">
+          <label class="form-label">Directory Path</label>
+          <div class="path-input-group">
+            <input type="text" 
+                   [(ngModel)]="newSourcePath" 
+                   placeholder="Select a directory..."
+                   class="path-input"
+                   readonly>
+            <button class="browse-btn" (click)="browseDirectory()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M10 20H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h4l2-2h4l2 2h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6" stroke-width="2"/>
+                <circle cx="12" cy="13" r="4" stroke-width="2"/>
+              </svg>
+              Browse
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Display Name (Optional)</label>
+          <input type="text" 
+                 [(ngModel)]="newSourceName" 
+                 placeholder="e.g., 'My Comics Collection'"
+                 class="name-input">
+        </div>
+
+        <button class="add-btn" 
+                (click)="addSource()" 
+                [disabled]="!newSourcePath">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M12 5v14M5 12h14" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Add Source
+        </button>
+      </div>
+
+      <!-- Sources List -->
+      @if (sources.length > 0) {
+        <div class="sources-list">
+          @for (source of sources; track source.id) {
+            <div class="source-card" [class.disabled]="!source.enabled">
+              <div class="source-header">
+                <div class="source-info">
+                  <h3 class="source-name">{{ source.name }}</h3>
+                  <p class="source-path">{{ truncatePath(source.path) }}</p>
+                  <div class="source-stats">
+                    <span class="stat">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M3 7V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7M3 7h18" stroke-width="2"/>
+                      </svg>
+                      {{ source.totalComics }} comics
+                    </span>
+                    <span class="stat">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2"/>
+                      </svg>
+                      Last indexed: {{ source.lastIndexed | date:'short' }}
+                    </span>
+                  </div>
+                </div>
+                
+                <div class="source-actions">
+                  <div class="toggle-switch">
+                    <input type="checkbox" 
+                           [id]="'toggle-' + source.id"
+                           [checked]="source.enabled"
+                           (change)="toggleSource(source.id, $event.target.checked)"
+                           class="toggle-input">
+                    <label [for]="'toggle-' + source.id" class="toggle-label"></label>
+                  </div>
+                  
+                  <div class="action-buttons">
+                    <button class="action-btn test" 
+                            (click)="testSource(source.id)"
+                            title="Test Directory">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2"/>
+                      </svg>
+                    </button>
+                    <button class="action-btn open" 
+                            (click)="openSourceInExplorer(source.id)"
+                            title="Open in Explorer">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M10 20H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h4l2-2h4l2 2h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6" stroke-width="2"/>
+                        <circle cx="12" cy="13" r="4" stroke-width="2"/>
+                      </svg>
+                    </button>
+                    <button class="action-btn delete" 
+                            (click)="removeSource(source.id)"
+                            title="Remove Source">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16" stroke-width="2"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-sources">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M10 20H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h4l2-2h4l2 2h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6" stroke-width="2"/>
+            <circle cx="12" cy="13" r="4" stroke-width="2"/>
+          </svg>
+          <h3>No Sources Added</h3>
+          <p>Add directories containing your comic files to get started.</p>
+        </div>
+      }
+    </section>
+
+    <!-- Indexing Settings -->
+    <section class="settings-section">
+      <div class="section-header">
+        <h2>Indexing Settings</h2>
+        <p class="section-description">Configure how comics are indexed and scanned</p>
+      </div>
+
+      <div class="settings-grid">
+        <!-- File Types -->
+        <div class="setting-group">
+          <h3 class="setting-title">File Types to Index</h3>
+          <p class="setting-description">Select which file extensions to scan for</p>
+          <div class="file-types">
+            @for (ext of availableExtensions; track ext.ext) {
+              <label class="file-type-checkbox">
+                <input type="checkbox" 
+                       [(ngModel)]="ext.checked"
+                       class="checkbox-input">
+                <span class="checkbox-custom"></span>
+                <span class="file-type-name">{{ ext.name }}</span>
+                <code class="file-type-ext">{{ ext.ext }}</code>
+              </label>
+            }
+          </div>
+        </div>
+
+        <!-- Scan Options -->
+        <div class="setting-group">
+          <h3 class="setting-title">Scan Options</h3>
+          
+          <label class="setting-option">
+            <div class="option-info">
+              <span class="option-label">Scan Subdirectories</span>
+              <span class="option-description">Search for comics in subfolders</span>
+            </div>
+            <div class="toggle-switch small">
+              <input type="checkbox" 
+                     [(ngModel)]="scanSubdirectories"
+                     class="toggle-input">
+              <label class="toggle-label"></label>
+            </div>
+          </label>
+
+          <label class="setting-option">
+            <div class="option-info">
+              <span class="option-label">Maximum Scan Depth</span>
+              <span class="option-description">How many folder levels to scan</span>
+            </div>
+            <div class="number-input">
+              <input type="number" 
+                     [(ngModel)]="maxScanDepth"
+                     min="1" 
+                     max="10" 
+                     class="number-input-field">
+              <span class="number-input-label">levels</span>
+            </div>
+          </label>
+
+          <label class="setting-option">
+            <div class="option-info">
+              <span class="option-label">Auto-index on Startup</span>
+              <span class="option-description">Automatically scan for new comics when app starts</span>
+            </div>
+            <div class="toggle-switch small">
+              <input type="checkbox" 
+                     [(ngModel)]="settings.autoIndexing"
+                     class="toggle-input">
+              <label class="toggle-label"></label>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Indexing Actions -->
+      <div class="indexing-actions">
+        <div class="action-buttons">
+          <button class="action-btn secondary" 
+                  (click)="quickScan()"
+                  [disabled]="scanning">
+            @if (scanning) {
+              <div class="spinner-small"></div>
+            }
+            Quick Scan
+          </button>
+          
+          <button class="action-btn primary" 
+                  (click)="startIndexing()"
+                  [disabled]="scanning">
+            @if (scanning) {
+              <div class="spinner-small"></div>
+            }
+            Full Indexing
+          </button>
+        </div>
+
+        <!-- Progress Bar -->
+        @if (scanning) {
+          <div class="indexing-progress">
+            <div class="progress-header">
+              <span class="progress-title">Indexing in progress...</span>
+              <span class="progress-percent">{{ getProgressPercent() }}%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="getProgressPercent()"></div>
+            </div>
+            <div class="progress-details">
+              <span class="current-file">{{ progress.currentFile }}</span>
+              <span class="progress-counts">
+                {{ progress.processed }} / {{ progress.total }}
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Advanced Settings -->
+    <section class="settings-section">
+      <div class="section-header">
+        <h2>Advanced Settings</h2>
+        <p class="section-description">Advanced configuration options</p>
+      </div>
+
+      <div class="advanced-settings">
+        <div class="setting-option">
+          <div class="option-info">
+            <span class="option-label">Cache Thumbnails</span>
+            <span class="option-description">Store cover thumbnails for faster loading</span>
+          </div>
+          <div class="toggle-switch small">
+            <input type="checkbox" 
+                   [(ngModel)]="settings.thumbnailCache"
+                   class="toggle-input">
+            <label class="toggle-label"></label>
+          </div>
+        </div>
+
+        <div class="setting-option">
+          <div class="option-info">
+            <span class="option-label">Thumbnail Size</span>
+            <span class="option-description">Size of cached thumbnails</span>
+          </div>
+          <div class="number-input">
+            <input type="number" 
+                   [(ngModel)]="settings.thumbnailSize"
+                   min="100" 
+                   max="1000" 
+                   step="10"
+                   class="number-input-field">
+            <span class="number-input-label">px</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Actions Section -->
+    <section class="settings-section">
+      <div class="section-header">
+        <h2>Actions</h2>
+      </div>
+
+      <div class="action-buttons-row">
+        <button class="action-btn save" (click)="saveSettings()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" stroke-width="2"/>
+            <path d="M17 21v-8H7v8M7 3v5h8" stroke-width="2"/>
+          </svg>
+          Save Settings
+        </button>
+
+        <button class="action-btn danger" (click)="resetSettings()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke-width="2"/>
+          </svg>
+          Reset to Defaults
+        </button>
+      </div>
+    </section>
+  </div>
+</div>

@@ -1,0 +1,420 @@
+<div class="reader-container" [class.fullscreen]="fullscreen" [class.hide-cursor]="!showControls && !showSidebar">
+  <!-- Loading Overlay -->
+  @if (loading) {
+    <div class="loading-overlay">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <p>Loading comic...</p>
+        <div class="loading-progress">
+          <div class="progress-bar">
+            <div class="progress-fill"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Top Navigation Bar -->
+  @if (showControls) {
+    <nav class="top-nav glass-effect">
+      <div class="nav-left">
+        <button class="nav-btn" (click)="router.navigate(['/'])" title="Back to Library">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M19 12H5M12 19l-7-7 7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="nav-text">Library</span>
+        </button>
+        
+        <div class="comic-info">
+          <h1 class="comic-title">{{ comic?.title || 'Loading...' }}</h1>
+          <div class="comic-meta">
+            <span class="meta-item">Page {{ currentPageIndex + 1 }} of {{ pages.length }}</span>
+            <span class="meta-item">{{ getProgressPercent() }}% read</span>
+            @if (comic?.bookmarks && comic?.bookmarks!.length > 0) {
+              <span class="meta-item">{{ comic?.bookmarks!.length }} 🔖</span>
+            }
+          </div>
+        </div>
+      </div>
+      
+      <div class="nav-right">
+        <!-- Reading Mode -->
+        <div class="nav-group">
+          <label class="nav-label">View:</label>
+          <div class="mode-buttons">
+            @for (mode of viewModes; track mode.id) {
+              <button class="mode-btn" 
+                      [class.active]="readingMode === mode.id"
+                      (click)="setReadingMode(mode.id)"
+                      [title]="mode.name">
+                <span class="mode-icon">{{ mode.icon }}</span>
+                <span class="mode-text">{{ mode.name }}</span>
+              </button>
+            }
+          </div>
+        </div>
+        
+        <!-- Fit Mode -->
+        <div class="nav-group">
+          <label class="nav-label">Fit:</label>
+          <div class="fit-buttons">
+            @for (fit of fitModes; track fit.id) {
+              <button class="fit-btn" 
+                      [class.active]="fitMode === fit.id"
+                      (click)="setFitMode(fit.id)"
+                      [title]="fit.name">
+                <span class="fit-icon">{{ fit.icon }}</span>
+              </button>
+            }
+          </div>
+        </div>
+        
+        <!-- Zoom Controls -->
+        <div class="nav-group">
+          <div class="zoom-controls">
+            <button class="zoom-btn" (click)="zoomOut()" title="Zoom Out">
+              <svg class="zoom-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M5 12h14" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <span class="zoom-level">{{ zoomLevel }}%</span>
+            <button class="zoom-btn" (click)="zoomIn()" title="Zoom In">
+              <svg class="zoom-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M12 5v14M5 12h14" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <button class="zoom-reset" (click)="resetZoom()" title="Reset Zoom">Reset</button>
+          </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button class="action-btn" 
+                  [class.active]="isBookmarked()"
+                  (click)="toggleBookmark()"
+                  title="Bookmark Page">
+            <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" 
+                    [attr.fill]="isBookmarked() ? 'currentColor' : 'none'"
+                    stroke-width="2"/>
+            </svg>
+          </button>
+          
+          <button class="action-btn" (click)="toggleFullscreen()" title="Fullscreen">
+            <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" stroke-width="2"/>
+            </svg>
+          </button>
+          
+          <button class="action-btn" (click)="markAllAsRead()" title="Mark All as Read">
+            <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </nav>
+  }
+
+  <!-- Left Sidebar -->
+  @if (showSidebar) {
+    <aside class="sidebar glass-effect" (mouseenter)="clearTimeouts()" (mouseleave)="resetControlsTimer()">
+      <div class="sidebar-header">
+        <div class="sidebar-tabs">
+          <button class="sidebar-tab" 
+                  [class.active]="showThumbnails"
+                  (click)="toggleThumbnails()">
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <rect x="3" y="3" width="7" height="7" stroke-width="2"/>
+              <rect x="14" y="3" width="7" height="7" stroke-width="2"/>
+              <rect x="3" y="14" width="7" height="7" stroke-width="2"/>
+              <rect x="14" y="14" width="7" height="7" stroke-width="2"/>
+            </svg>
+            <span class="tab-text">Thumbnails</span>
+          </button>
+          <button class="sidebar-tab" 
+                  [class.active]="showBookmarks"
+                  (click)="toggleBookmarksPanel()">
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" stroke-width="2"/>
+            </svg>
+            <span class="tab-text">Bookmarks</span>
+          </button>
+        </div>
+        <button class="sidebar-close" (click)="hideSidebar()" title="Close Sidebar">
+          &times;
+        </button>
+      </div>
+      
+      <div class="sidebar-content">
+        <!-- Thumbnails Panel -->
+        @if (showThumbnails) {
+          <div class="thumbnails-panel">
+            <div class="thumbnails-grid">
+              @for (page of pages; track page.index; let i = $index) {
+                <div class="thumbnail-container" 
+                     [class.active]="i === currentPageIndex"
+                     [class.read]="isPageRead(i)">
+                  <div class="thumbnail" (click)="goToPage(i)">
+                    <div class="thumbnail-image">
+                      <img [src]="getImageUrl(page)" 
+                           [alt]="'Page ' + (i + 1)"
+                           loading="lazy">
+                    </div>
+                    <div class="thumbnail-overlay">
+                      <span class="page-number">{{ i + 1 }}</span>
+                      @if (isPageRead(i)) {
+                        <span class="read-indicator">✓</span>
+                      }
+                      @if (comic?.bookmarks!.includes(i)) {
+                        <span class="bookmark-indicator">🔖</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+        
+        <!-- Bookmarks Panel -->
+        @if (showBookmarks && comic?.bookmarks && comic?.bookmarks!.length > 0) {
+          <div class="bookmarks-panel">
+            <div class="bookmarks-list">
+              @for (bookmark of comic?.bookmarks; track bookmark) {
+                <button class="bookmark-item" (click)="goToBookmark(bookmark)">
+                  <div class="bookmark-preview">
+                    @if (pages[bookmark]) {
+                      <img [src]="getImageUrl(pages[bookmark])" 
+                           [alt]="'Page ' + (bookmark + 1)"
+                           loading="lazy">
+                    }
+                  </div>
+                  <div class="bookmark-info">
+                    <span class="bookmark-page">Page {{ bookmark + 1 }}</span>
+                    <span class="bookmark-title">{{ pages[bookmark]?.name || 'Page ' + (bookmark + 1) }}</span>
+                  </div>
+                  <button class="bookmark-remove" 
+                          (click)="toggleBookmark(); $event.stopPropagation()"
+                          title="Remove Bookmark">
+                    &times;
+                  </button>
+                </button>
+              }
+            </div>
+          </div>
+        } @else if (showBookmarks) {
+          <div class="empty-bookmarks">
+            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" stroke-width="2"/>
+            </svg>
+            <h3>No Bookmarks</h3>
+            <p>Bookmark pages by clicking the bookmark icon or pressing 'B'</p>
+          </div>
+        }
+      </div>
+    </aside>
+  }
+
+  <!-- Main Reader Area -->
+  <main class="reader-main" #pageViewer>
+    @if (!loading && pages.length > 0) {
+      <div class="page-container" (click)="toggleControls()">
+        <!-- Single Page Mode -->
+        @if (readingMode === 'single') {
+          <div class="page-wrapper">
+            <img #pageImage
+                 [src]="getImageUrl(currentPage!)"
+                 [alt]="'Page ' + (currentPageIndex + 1)"
+                 class="page-image"
+                 [style.transform]="'scale(' + (zoomLevel / 100) + ')'">
+          </div>
+        }
+        
+        <!-- Double Page Mode -->
+        @if (readingMode === 'double') {
+          <div class="double-page-wrapper">
+            @if (currentPageIndex > 0) {
+              <div class="double-page">
+                <img [src]="getImageUrl(pages[currentPageIndex - 1])"
+                     [alt]="'Page ' + currentPageIndex"
+                     class="page-image left-page">
+              </div>
+            }
+            <div class="double-page">
+              <img #pageImage
+                   [src]="getImageUrl(currentPage!)"
+                   [alt]="'Page ' + (currentPageIndex + 1)"
+                   class="page-image right-page"
+                   [style.transform]="'scale(' + (zoomLevel / 100) + ')'">
+            </div>
+            @if (currentPageIndex < pages.length - 1) {
+              <div class="double-page">
+                <img [src]="getImageUrl(pages[currentPageIndex + 1])"
+                     [alt]="'Page ' + (currentPageIndex + 2)"
+                     class="page-image right-page">
+              </div>
+            }
+          </div>
+        }
+        
+        <!-- Navigation Arrows -->
+        <div class="nav-arrows">
+          <button class="nav-arrow left" 
+                  (click)="previousPage(); $event.stopPropagation()"
+                  [class.hidden]="currentPageIndex === 0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M15 18l-6-6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="nav-arrow right" 
+                  (click)="nextPages(); $event.stopPropagation()"
+                  [class.hidden]="currentPageIndex === pages.length - 1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M9 18l6-6-6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    }
+  </main>
+
+  <!-- Bottom Control Bar -->
+  @if (showControls) {
+    <footer class="bottom-bar glass-effect">
+      <div class="bottom-left">
+        <button class="sidebar-toggle" (click)="toggleSidebar()" title="Toggle Sidebar">
+          <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect x="3" y="3" width="18" height="18" rx="2" stroke-width="2"/>
+            <path d="M9 3v18M15 3v18" stroke-width="2"/>
+          </svg>
+        </button>
+        
+        <div class="page-slider-container">
+          <input type="range" 
+                 min="0" 
+                 [max]="pages.length - 1" 
+                 [value]="currentPageIndex"
+                 (input)="goToPage($event)"
+                 class="page-slider">
+          <div class="page-numbers">
+            <span>{{ currentPageIndex + 1 }}</span>
+            <span class="total-pages">/ {{ pages.length }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bottom-center">
+        <div class="progress-indicator">
+          <div class="progress-ring-small">
+            <svg width="24" height="24">
+              <circle cx="12" cy="12" r="10" stroke="var(--bg-tertiary)" stroke-width="2" fill="none"/>
+              <circle cx="12" cy="12" r="10" stroke="var(--accent)" stroke-width="2" fill="none"
+                      [attr.stroke-dasharray]="63"
+                      [attr.stroke-dashoffset]="63 - (getProgressPercent() / 100 * 63)"
+                      transform="rotate(-90 12 12)"/>
+            </svg>
+          </div>
+          <span class="progress-text">{{ getProgressPercent() }}%</span>
+        </div>
+        
+        <div class="quick-actions">
+          <button class="quick-action" 
+                  (click)="goToPage(0)"
+                  [disabled]="currentPageIndex === 0"
+                  title="First Page">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="quick-action" 
+                  (click)="previousPage()"
+                  [disabled]="currentPageIndex === 0"
+                  title="Previous Page">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M15 18l-6-6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="quick-action play" 
+                  (click)="toggleControls()"
+                  title="Toggle Controls">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" stroke-width="2"/>
+              <path d="M10 8l6 4-6 4V8z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="quick-action" 
+                  (click)="nextPages()"
+                  [disabled]="currentPageIndex === pages.length - 1"
+                  title="Next Page">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M9 18l6-6-6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="quick-action" 
+                  (click)="goToPage(pages.length - 1)"
+                  [disabled]="currentPageIndex === pages.length - 1"
+                  title="Last Page">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M13 17l5-5-5-5M6 17l5-5-5-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <div class="bottom-right">
+        <div class="status-badges">
+          @if (isBookmarked()) {
+            <span class="status-badge bookmark" title="Bookmarked">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+              </svg>
+            </span>
+          }
+          @if (isPageRead(currentPageIndex)) {
+            <span class="status-badge read" title="Page Read">
+              ✓
+            </span>
+          }
+          @if (comic?.isRead) {
+            <span class="status-badge completed" title="Completed">
+              🏁
+            </span>
+          }
+        </div>
+        
+        <div class="shortcut-hints">
+          <kbd>← →</kbd>
+          <kbd>Space</kbd>
+          <kbd>B</kbd>
+          <kbd>F</kbd>
+        </div>
+      </div>
+    </footer>
+  }
+
+  <!-- Floating Quick Actions -->
+  <div class="floating-actions" [class.hidden]="showControls">
+    <button class="floating-action" (click)="toggleControls()" title="Show Controls">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M4 6h16M4 12h16M4 18h16" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button class="floating-action" (click)="toggleSidebar()" title="Toggle Sidebar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <rect x="3" y="3" width="18" height="18" rx="2" stroke-width="2"/>
+        <path d="M9 3v18" stroke-width="2"/>
+      </svg>
+    </button>
+    <button class="floating-action" 
+            [class.active]="isBookmarked()"
+            (click)="toggleBookmark()"
+            title="Bookmark Page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" 
+              [attr.fill]="isBookmarked() ? 'currentColor' : 'none'"
+              stroke-width="2"/>
+      </svg>
+    </button>
+  </div>
+</div>

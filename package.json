@@ -1,12 +1,16 @@
 {
   "name": "bdhq-reader",
   "version": "0.0.0",
+  "main": "electron/main.js",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "electron": "electron .",
+    "electron-dev": "concurrently \"ng serve\" \"wait-on http://localhost:4200 && electron .\"",
+    "electron-build": "ng build --base-href ./ && electron-builder"
   },
   "prettier": {
     "overrides": [
@@ -20,13 +24,22 @@
   },
   "private": true,
   "dependencies": {
+    "@angular/animations": "^21.0.6",
+    "@angular/cdk": "^21.0.5",
     "@angular/common": "^20.1.0",
     "@angular/compiler": "^20.1.0",
     "@angular/core": "^20.1.0",
     "@angular/forms": "^20.1.0",
+    "@angular/material": "^21.0.5",
     "@angular/platform-browser": "^20.1.0",
     "@angular/router": "^20.1.0",
+    "@tailwindcss/forms": "^0.5.11",
+    "@tailwindcss/typography": "^0.5.19",
+    "@types/adm-zip": "^0.5.7",
+    "adm-zip": "^0.5.16",
+    "ngx-toastr": "^19.1.0",
     "rxjs": "~7.8.0",
+    "tailwindcss": "^4.1.18",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"
   },
@@ -35,12 +48,36 @@
     "@angular/cli": "^20.1.4",
     "@angular/compiler-cli": "^20.1.0",
     "@types/jasmine": "~5.1.0",
+    "concurrently": "^9.2.1",
+    "electron": "^39.2.7",
+    "electron-builder": "^26.0.12",
     "jasmine-core": "~5.8.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
-    "typescript": "~5.8.2"
+    "typescript": "~5.8.2",
+    "wait-on": "^9.0.3"
+  },
+  "build": {
+    "appId": "com.bdhqreader.app",
+    "productName": "bdhq-reader",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "dist/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
   }
 }

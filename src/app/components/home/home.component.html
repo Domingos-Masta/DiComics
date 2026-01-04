@@ -1,0 +1,493 @@
+<div class="home-container">
+  <!-- App Header -->
+  <header class="app-header glass-effect">
+    <div class="header-left">
+      <div class="logo">
+        <svg class="logo-icon" viewBox="0 0 24 24" fill="none"
+          xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M3 18V6C3 4.34315 4.34315 3 6 3H18C19.6569 3 21 4.34315 21 6V18C21 19.6569 19.6569 21 18 21H6C4.34315 21 3 19.6569 3 18Z"
+            stroke="currentColor" stroke-width="2" />
+          <path d="M8 9H16M8 13H16M8 17H12" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" />
+        </svg>
+        <span class="logo-text">BD HQ Reader</span>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <div class="search-bar">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none"
+          xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        <input type="text"
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="applyFilters()"
+          placeholder="Search comics..."
+          class="search-input">
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button class="upload-btn primary" (click)="uploadFiles()"
+        [disabled]="loading">
+        @if (loading) {
+        <svg class="spinner" viewBox="0 0 50 50">
+          <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor"
+            stroke-width="4" />
+        </svg>
+        <span>Loading...</span>
+        } @else {
+        <svg class="upload-icon" viewBox="0 0 24 24" fill="none"
+          xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+          <path d="M17 8L12 3L7 8" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M12 3V15" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span>Add Comics</span>
+        }
+      </button>
+
+      <!-- Refresh button -->
+      <button class="refresh-btn"
+        (click)="refreshLibrary()"
+        title="Refresh Library"
+        [disabled]="loading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M23 4v6h-6M1 20v-6h6" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+          <path
+            d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+
+      <!-- Index button -->
+      <button class="index-btn"
+        (click)="triggerIndexing()"
+        title="Index Library"
+        [disabled]="indexing || loading">
+        @if (indexing) {
+        <div class="spinner-small"></div>
+        } @else {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path
+            d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+            stroke-width="2" />
+        </svg>
+        }
+      </button>
+
+      <!-- Settings button -->
+      <button class="settings-btn" (click)="router.navigate(['/settings'])"
+        title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z"
+            stroke="currentColor" stroke-width="2" />
+          <path
+            d="M19.4 15C19.2669 15.3068 19.1333 15.6133 19 15.9194C18.2187 17.9141 17.1126 19.7445 15.7279 21.3343C15.052 22.1519 14.075 22.6479 13.0351 22.7093C12.3466 22.7507 11.6534 22.7507 10.9649 22.7093C9.92502 22.6479 8.94799 22.1519 8.27208 21.3343C6.88744 19.7445 5.78133 17.9141 5 15.9194C4.86667 15.6133 4.73314 15.3068 4.6 15C4.20503 14.0902 4 13.1036 4 12C4 10.8964 4.20503 9.90982 4.6 9C4.73314 8.69321 4.86667 8.38673 5 8.08063C5.78133 6.08594 6.88744 4.25552 8.27208 2.66569C8.94799 1.8481 9.92502 1.35211 10.9649 1.29077C11.6534 1.24934 12.3466 1.24934 13.0351 1.29077C14.075 1.35211 15.052 1.8481 15.7279 2.66569C17.1126 4.25552 18.2187 6.08594 19 8.08063C19.1333 8.38673 19.2669 8.69321 19.4 9C19.795 9.90982 20 10.8964 20 12C20 13.1036 19.795 14.0902 19.4 15Z"
+            stroke="currentColor" stroke-width="2" />
+        </svg>
+      </button>
+
+      <div class="user-menu">
+        <button class="user-btn" (click)="openAboutDialog()"
+          title="About & Settings">
+          <svg viewBox="0 0 24 24" fill="none"
+            xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z"
+              stroke="currentColor" stroke-width="2" />
+            <path
+              d="M19.4 15C19.2669 15.3068 19.1333 15.6133 19 15.9194C18.2187 17.9141 17.1126 19.7445 15.7279 21.3343C15.052 22.1519 14.075 22.6479 13.0351 22.7093C12.3466 22.7507 11.6534 22.7507 10.9649 22.7093C9.92502 22.6479 8.94799 22.1519 8.27208 21.3343C6.88744 19.7445 5.78133 17.9141 5 15.9194C4.86667 15.6133 4.73314 15.3068 4.6 15C4.20503 14.0902 4 13.1036 4 12C4 10.8964 4.20503 9.90982 4.6 9C4.73314 8.69321 4.86667 8.38673 5 8.08063C5.78133 6.08594 6.88744 4.25552 8.27208 2.66569C8.94799 1.8481 9.92502 1.35211 10.9649 1.29077C11.6534 1.24934 12.3466 1.24934 13.0351 1.29077C14.075 1.35211 15.052 1.8481 15.7279 2.66569C17.1126 4.25552 18.2187 6.08594 19 8.08063C19.1333 8.38673 19.2669 8.69321 19.4 9C19.795 9.90982 20 10.8964 20 12C20 13.1036 19.795 14.0902 19.4 15Z"
+              stroke="currentColor" stroke-width="2" />
+          </svg>
+        </button>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Filters & Controls -->
+    <div class="controls-bar">
+      <div class="filters">
+        <div class="filter-group">
+          <label class="filter-label">Sort by:</label>
+          <div class="filter-buttons">
+            <button class="filter-btn"
+              [class.active]="sortBy === 'date'"
+              (click)="sortBy = 'date'; applyFilters()">
+              Recently Added
+            </button>
+            <button class="filter-btn"
+              [class.active]="sortBy === 'name'"
+              (click)="sortBy = 'name'; applyFilters()">
+              Name (A-Z)
+            </button>
+            <button class="filter-btn"
+              [class.active]="sortBy === 'progress'"
+              (click)="sortBy = 'progress'; applyFilters()">
+              Progress
+            </button>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Filter by:</label>
+          <div class="filter-buttons">
+            <button class="filter-btn"
+              [class.active]="filterBy === 'all'"
+              (click)="filterBy = 'all'; applyFilters()">
+              All Comics
+            </button>
+            <button class="filter-btn"
+              [class.active]="filterBy === 'reading'"
+              (click)="filterBy = 'reading'; applyFilters()">
+              Currently Reading
+            </button>
+            <button class="filter-btn"
+              [class.active]="filterBy === 'unread'"
+              (click)="filterBy = 'unread'; applyFilters()">
+              Not Started
+            </button>
+            <button class="filter-btn"
+              [class.active]="filterBy === 'completed'"
+              (click)="filterBy = 'completed'; applyFilters()">
+              Completed
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats">
+        <span class="stat-item">
+          <strong>{{ filteredComics.length }}</strong> comics
+        </span>
+        @if (searchQuery) {
+        <span class="stat-item">
+          <strong>{{ filteredComics.length }}</strong> results for
+          "{{ searchQuery }}"
+        </span>
+        }
+      </div>
+    </div>
+
+    <!-- Comics Grid -->
+    <!-- Comics Grid -->
+    @if (filteredComics.length > 0) {
+    <div class="comics-grid">
+      @for (comic of filteredComics; track comic.id) {
+      <div class="comic-card scale-in" (click)="openComic(comic)">
+        <!-- Cover Image or Placeholder -->
+        <div class="comic-cover">
+          @if (hasCover(comic)) {
+          <!-- Real Cover Image -->
+          <div class="cover-image-real" [style]="getCoverStyle(comic)">
+            <!-- Loading overlay if extracting -->
+            @if (coversLoading.has(comic.id)) {
+            <div class="cover-loading">
+              <div class="loading-spinner-small"></div>
+            </div>
+            }
+          </div>
+          } @else {
+          <!-- Cover Placeholder -->
+          @let placeholder = getCoverPlaceholder(comic);
+          @if (placeholder) {
+          <div class="cover-placeholder" [class]="placeholder.color">
+            <span class="cover-initials">{{ placeholder.initials }}</span>
+            <!-- Retry button for failed covers -->
+            <button class="cover-retry"
+              (click)="retryCoverExtraction(comic, $event)"
+              title="Retry cover extraction">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M23 4v6h-6M1 20v-6h6" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" />
+                <path
+                  d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"
+                  stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+            </button>
+          </div>
+          }
+          }
+
+          <!-- Progress Indicator -->
+          <div class="cover-progress">
+            <div class="progress-ring">
+              <svg width="40" height="40">
+                <circle cx="20" cy="20" r="18" stroke="var(--bg-surface)"
+                  stroke-width="3" fill="none" />
+                <circle cx="20" cy="20" r="18" stroke="var(--accent)"
+                  stroke-width="3" fill="none"
+                  [attr.stroke-dasharray]="113"
+                  [attr.stroke-dashoffset]="113 - (getProgressPercent(comic) / 100 * 113)"
+                  transform="rotate(-90 20 20)" />
+              </svg>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="cover-actions">
+            <button class="cover-action-btn" (click)="markAsRead(comic, $event)"
+              title="Mark as read">
+              @if (comic.isRead) {
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+              </svg>
+              } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M20 6L9 17L4 12" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              }
+            </button>
+            <button class="cover-action-btn delete"
+              (click)="deleteComic(comic, $event)" title="Delete">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path
+                  d="M19 7L18.1327 19.1425C18.0579 20.1891 17.187 21 16.1378 21H7.86224C6.81296 21 5.94208 20.1891 5.86732 19.1425L5 7M10 11V17M14 11V17M15 7V4C15 3.44772 14.5523 3 14 3H10C9.44772 3 9 3.44772 9 4V7M4 7H20"
+                  stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Cover Status Badge -->
+          <div class="cover-status">
+            @if (hasCover(comic)) {
+            <span class="status-badge success" title="Cover extracted">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M5 13l4 4L19 7" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+            </span>
+            } @else {
+            <span class="status-badge warning" title="Placeholder cover">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+            </span>
+            }
+          </div>
+        </div>
+
+        <!-- Comic Info -->
+        <div class="comic-info">
+          <h3 class="comic-title">{{ comic.title }}</h3>
+
+          <div class="comic-meta">
+            <span class="meta-item">
+              <svg class="meta-icon" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor">
+                <path
+                  d="M12 8V12L15 15M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
+                  stroke-width="2" stroke-linecap="round" />
+              </svg>
+              {{ comic.addedDate | date:'MMM d, y' }}
+            </span>
+            <span class="meta-item">
+              <svg class="meta-icon" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor">
+                <path
+                  d="M3 19V5C3 3.89543 3.89543 3 5 3H19C20.1046 3 21 3.89543 21 5V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19Z"
+                  stroke-width="2" />
+                <path d="M3 9H21M9 21V9" stroke-width="2" />
+              </svg>
+              {{ comic.fileSize | fileSize }}
+            </span>
+            @if (comic.totalPages > 0) {
+            <span class="meta-item">
+              <svg class="meta-icon" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor">
+                <path
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                  stroke-width="2" />
+              </svg>
+              {{ comic.totalPages }} pages
+            </span>
+            }
+          </div>
+
+          <!-- Progress Bar -->
+          @if (comic.totalPages > 0) {
+          <div class="comic-progress">
+            <div class="progress-bar">
+              <div class="progress-fill"
+                [style.width.%]="getProgressPercent(comic)"></div>
+            </div>
+            <div class="progress-text">
+              {{ getProgress(comic) }} / {{ comic.totalPages }} pages
+              <span class="progress-percent">({{ getProgressPercent(comic) |
+                number:'1.0-0' }}%)</span>
+            </div>
+          </div>
+          }
+
+          <!-- Status Badges -->
+          <div class="comic-badges">
+            @if (comic.isRead) {
+            <span class="badge badge-success">Read</span>
+            }
+            @if (comic.bookmarks.length > 0) {
+            <span class="badge badge-primary">{{ comic.bookmarks.length }}
+              🔖</span>
+            }
+            @if (getProgressPercent(comic) >= 50 && getProgressPercent(comic) <
+            100) {
+            <span class="badge badge-warning">In Progress</span>
+            }
+            @if (!hasCover(comic)) {
+            <span class="badge badge-secondary">No Cover</span>
+            }
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+    } @else {
+    <div class="empty-state fade-in">
+      <div class="empty-state-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path
+            d="M3 18V6C3 4.34315 4.34315 3 6 3H18C19.6569 3 21 4.34315 21 6V18C21 19.6569 19.6569 21 18 21H6C4.34315 21 3 19.6569 3 18Z"
+            stroke-width="2" />
+          <path d="M8 9H16M8 13H16M8 17H12" stroke-width="2"
+            stroke-linecap="round" />
+        </svg>
+      </div>
+      <h2>No Comics Found</h2>
+      <p class="empty-state-text">
+        @if (searchQuery) {
+        No comics match "{{ searchQuery }}". Try a different search or
+        <button class="text-link"
+          (click)="searchQuery = ''; applyFilters()">clear filters</button>.
+        } @else {
+        Your library is empty. Start by adding some comics!
+        }
+      </p>
+      <button class="upload-btn large primary" (click)="uploadFiles()"
+        [disabled]="loading">
+        @if (loading) {
+        <svg class="spinner" viewBox="0 0 50 50">
+          <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor"
+            stroke-width="4" />
+        </svg>
+        <span>Loading...</span>
+        } @else {
+        <svg class="upload-icon" viewBox="0 0 24 24" fill="none"
+          xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+          <path d="M17 8L12 3L7 8" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M12 3V15" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span>Add Your First Comic</span>
+        }
+      </button>
+    </div>
+    }
+  </main>
+
+  <!-- About Dialog (Hidden by default, triggered by user menu) -->
+  <div class="about-dialog" id="aboutDialog" style="display: none;">
+    <div class="about-content">
+      <div class="about-header">
+        <h2>About ComicFlow</h2>
+        <button class="close-btn"
+          onclick="document.getElementById('aboutDialog').style.display='none'">
+          &times;
+        </button>
+      </div>
+      <div class="about-body">
+        <div class="about-logo">
+          <div class="logo-large">
+            <svg viewBox="0 0 24 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M3 18V6C3 4.34315 4.34315 3 6 3H18C19.6569 3 21 4.34315 21 6V18C21 19.6569 19.6569 21 18 21H6C4.34315 21 3 19.6569 3 18Z"
+                stroke="currentColor" stroke-width="2" />
+              <path d="M8 9H16M8 13H16M8 17H12" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </div>
+        </div>
+        <p class="about-version">Version 1.0.0</p>
+        <p class="about-description">
+          ComicFlow is a modern CBZ reader built with Angular and Electron.
+          Enjoy reading your digital comics with a beautiful, intuitive
+          interface.
+        </p>
+        <div class="about-features">
+          <h3>Features</h3>
+          <ul>
+            <li>📚 Read CBZ/ZIP comic files</li>
+            <li>🔖 Bookmark your favorite pages</li>
+            <li>📊 Track reading progress</li>
+            <li>🎨 Beautiful gradient covers</li>
+            <li>⚡ Fast and responsive</li>
+          </ul>
+        </div>
+        <div class="about-footer">
+          <p>Built with ❤️ using Angular & Electron</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Add indexing progress overlay -->
+  @if (indexing) {
+  <div class="indexing-overlay">
+    <div class="indexing-modal">
+      <h3>Indexing Library</h3>
+      <div class="indexing-progress">
+        <div class="progress-header">
+          <span class="source-name">{{ indexingProgress.currentSource }}</span>
+          <span class="progress-percent">{{ indexingProgress.percent }}%</span>
+        </div>
+        <div class="progress-text">
+          {{ indexingProgress.processed }} of {{ indexingProgress.total }} files
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill"
+            [style.width.%]="indexingProgress.percent"></div>
+        </div>
+        <div class="current-file">
+          {{ indexingProgress.currentFile }}
+        </div>
+      </div>
+      <button class="cancel-btn" (click)="cancelIndexing()"
+        [disabled]="!indexing">
+        Cancel
+      </button>
+    </div>
+  </div>
+  }
+
+  <!-- Add toast notification -->
+  @if (showToast) {
+  <div class="toast-notification" [class]="toastType">
+    <div class="toast-content">
+      <span class="toast-message">{{ toastMessage }}</span>
+      <button class="toast-close" (click)="showToast = false">×</button>
+    </div>
+  </div>
+  }
+</div>

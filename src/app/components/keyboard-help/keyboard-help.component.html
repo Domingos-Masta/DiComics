@@ -1,0 +1,89 @@
+   <div class="keyboard-help" (click)="close.emit()">
+      <div class="keyboard-content" (click)="$event.stopPropagation()">
+        <div class="keyboard-header">
+          <h2>Keyboard Shortcuts</h2>
+          <button class="close-btn" (click)="close.emit()">&times;</button>
+        </div>
+        <div class="keyboard-body">
+          <div class="shortcut-category">
+            <h3>Navigation</h3>
+            <div class="shortcut-list">
+              <div class="shortcut-item">
+                <kbd>→</kbd> or <kbd>Space</kbd>
+                <span>Next page</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>←</kbd>
+                <span>Previous page</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>Home</kbd>
+                <span>First page</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>End</kbd>
+                <span>Last page</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="shortcut-category">
+            <h3>Controls</h3>
+            <div class="shortcut-list">
+              <div class="shortcut-item">
+                <kbd>B</kbd>
+                <span>Toggle bookmark</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>F</kbd>
+                <span>Toggle fullscreen</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>T</kbd>
+                <span>Toggle sidebar</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>C</kbd>
+                <span>Toggle controls</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="shortcut-category">
+            <h3>Zoom</h3>
+            <div class="shortcut-list">
+              <div class="shortcut-item">
+                <kbd>Ctrl</kbd> + <kbd>+</kbd>
+                <span>Zoom in</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>Ctrl</kbd> + <kbd>-</kbd>
+                <span>Zoom out</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>Ctrl</kbd> + <kbd>0</kbd>
+                <span>Reset zoom</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>
+                <span>Fit modes</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="shortcut-category">
+            <h3>General</h3>
+            <div class="shortcut-list">
+              <div class="shortcut-item">
+                <kbd>Esc</kbd>
+                <span>Exit fullscreen/Go back</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>?</kbd>
+                <span>Show this help</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
