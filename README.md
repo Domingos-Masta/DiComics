@@ -1,60 +1,180 @@
-# DiComics
+# DIComics
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.4.
+**DIComics** is an **open-source, cross-platform comic reader and library manager** built with **Angular** and **Electron**.
 
-## Development server
+It provides a fast, offline-first desktop experience for organizing and reading digital comics, optimized for users with **large local collections** who want simplicity, performance, and control over their data.
 
-To start a local development server, run:
+> No cloud lock-in. No accounts. Your comics stay on your machine.
 
-```bash
-ng serve
+---
+
+## ✨ Key Features
+
+### 📚 Library Management
+- Import comics from local folders
+- Automatic indexing of image-based comics
+- Organize by folder, series, volume, or issue
+- Persistent local catalog
+
+### 📖 Reading Experience
+- Smooth page navigation
+- Fit-to-height / fit-to-width modes
+- Zoom and pan
+- Vertical and horizontal reading
+- Keyboard and mouse shortcuts
+
+### ⚡ Desktop-First
+- Native desktop experience via Electron
+- Offline-first (no internet required)
+- Optimized for large libraries
+
+### 🖥 Cross-Platform
+- macOS (Apple Silicon & Intel)
+- Windows
+- Linux
+
+---
+
+## 🖼 Screenshots
+
+> _Screenshots are illustrative. UI may evolve._
+
+### Library View
+![Library View](./screenshots/library.png)
+
+### Reader View
+![Reader View](./screenshots/reader.png)
+
+### Folder Import
+![Folder Import](./screenshots/import.png)
+
+> Place screenshots in a `/screenshots` folder at the project root.
+
+---
+
+## 🧱 Tech Stack
+
+- **Frontend**: Angular
+- **Desktop Runtime**: Electron
+- **Language**: TypeScript
+- **Packaging & Distribution**: electron-builder
+- **Storage**: Local filesystem
+
+---
+
+## 📁 Project Structure
+
+```text
+di-comics/
+├── electron/
+│   ├── main.ts          # Electron main process
+│   ├── preload.ts       # Secure IPC bridge
+│   └── electron.ts
+│
+├── src/
+│   ├── app/             # Angular application
+│   ├── assets/
+│   └── environments/
+│
+├── screenshots/
+├── dist/
+├── angular.json
+├── package.json
+└── README.md
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+---
 
-## Code scaffolding
+## 🚀 Getting Started
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### Prerequisites
 
-```bash
-ng generate component component-name
-```
+- **Node.js** ≥ 18
+- **npm** ≥ 9
+- **Angular CLI** ≥ 16
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+---
 
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
+### Installation
 
 ```bash
-ng build
+git clone https://github.com/<your-org>/di-comics.git
+cd di-comics
+npm install
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+---
 
-## Running unit tests
+## 🧪 Development
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+### Run Angular (web)
 
 ```bash
-ng test
+npm run start
 ```
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
+### Run Electron + Angular (desktop dev)
 
 ```bash
-ng e2e
+npm run electron:serve
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+---
 
-## Additional Resources
+## 📦 Production Build
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
-# DiComics
+```bash
+npm run build
+npm run electron:build
+```
+
+---
+
+## 🔄 Auto-Updates
+
+DIComics supports **auto-updates** using **electron-updater**.
+
+Updates are delivered via **GitHub Releases** and applied only after user confirmation.
+
+---
+
+## 🔐 Security
+
+- `contextIsolation: true`
+- `nodeIntegration: false`
+- Secure IPC via preload scripts
+
+---
+
+## 📚 Supported Formats
+
+- Image folders (`.png`, `.jpg`, `.jpeg`, `.webp`)
+- CBZ (optional)
+
+---
+
+## 🛣 Roadmap
+
+- Metadata support (ComicInfo.xml)
+- Reading progress tracking
+- Bookmarks
+- Themes
+- Optional sync
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome. Please submit pull requests with clear descriptions and ensure platform compatibility.
+
+---
+
+## 📄 License
+
+MIT License.
+
+---
+
+## 👤 Maintainer
+
+**DIComics** – Open-source comic reader and manager built with Angular & Electron.
