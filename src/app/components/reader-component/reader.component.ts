@@ -152,7 +152,8 @@ export class ReaderComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getImageUrl(page: ComicPage): string {
-    return this.cbzService.getImageUrl(page);
+    const imageUrl = this.cbzService.getImageUrl(page);
+    return imageUrl;
   }
 
   nextPages(): void {
@@ -175,8 +176,13 @@ export class ReaderComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  goToPage(pageIndexEvent: any): void {
+  goToPageSec(pageIndexEvent: any) {
     const pageIndex = (pageIndexEvent.target as HTMLInputElement).valueAsNumber;
+    this.goToPage(pageIndex);
+  }
+
+  goToPage(pageIndex: number): void {
+
     if (pageIndex >= 0 && pageIndex < this.pages.length) {
       this.currentPageIndex = pageIndex;
       this.markPageAsRead(pageIndex);

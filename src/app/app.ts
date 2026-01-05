@@ -16,7 +16,7 @@ import { CbzService } from './services/cbz.service';
 
 export class App implements OnInit {
   showSplash = true;
-  protected readonly title = signal('bdhq-reader');
+  protected readonly title = signal('dicomics');
 constructor(
     private indexingService: IndexingService,
     private settingsService: SettingsService,

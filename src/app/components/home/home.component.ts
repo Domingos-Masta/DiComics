@@ -129,7 +129,6 @@ export class HomeComponent implements OnInit, OnDestroy {
       console.log('This file Info:', filePaths);
       console.log('This file Info:', fileInfo);
 
-
       const existingPaths = this.comics.map(c => c.filePath);
       const newPaths = filePaths.filter(path => !existingPaths.includes(path));
 

@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "bdhq-reader": {
+    "dicomics": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -59,8 +59,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "8kB",
-                  "maximumError": "16kB"
+                  "maximumWarning": "16kB",
+                  "maximumError": "24kB"
                 }
               ],
               "outputHashing": "all"
@@ -77,10 +77,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "bdhq-reader:build:production"
+              "buildTarget": "dicomics:build:production"
             },
             "development": {
-              "buildTarget": "bdhq-reader:build:development"
+              "buildTarget": "dicomics:build:development"
             }
           },
           "defaultConfiguration": "development"

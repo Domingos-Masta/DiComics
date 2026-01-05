@@ -475,6 +475,7 @@ export class IndexingService {
             return newFiles;
         } finally {
             this.isIndexing = false;
+            this.indexingCompleted.emit({ added: 0, updated: 0, removed: 0 });
             console.log('=== QUICK SCAN FINISHED ===');
         }
     }

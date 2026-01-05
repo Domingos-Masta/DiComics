@@ -4,7 +4,9 @@ const fs = require('fs');
 const fsasync = require('fs').promises;
 const AdmZip = require('adm-zip');
 const JSZip = require('jszip');
-const unrar = require('unrar-promise');
+const unrar = require('node-unrar-js');
+const { XMLParser } = require("fast-xml-parser");
+const { log } = require('console');
 
 let mainWindow;
 
@@ -22,7 +24,7 @@ function createWindow() {
             contextIsolation: true,
             preload: path.join(__dirname, 'preload.js')
         },
-        icon: path.join(__dirname, 'assets/icon.png') // Add your icon
+        icon: path.join(__dirname, 'assets/icon') // Add your icon
     });
 
     // Custom menu
@@ -109,20 +111,8 @@ app.on('activate', () => {
     }
 });
 
-// IPC handlers
-ipcMain.handle('select-files', async () => {
-    const result = await dialog.showOpenDialog({
-        properties: ['openFile', 'multiSelections'],
-        filters: [
-            { name: 'Comic Files', extensions: ['cbz', 'zip'] },
-            { name: 'All Files', extensions: ['*'] }
-        ]
-    });
-    return result.filePaths;
-});
 
 ipcMain.handle('read-bdhq', async (event, filePath) => {
-    console.log(`Reading comic: ${filePath}`);
     return await readComicFile(filePath);
 });
 
@@ -189,38 +179,6 @@ ipcMain.handle('open-directory', async (event, dirPath) => {
     }
 });
 
-// Add IPC handler for directory scanning
-ipcMain.handle('scan-directory', async (event, dirPath, options) => {
-    console.log('Scanning directory:', dirPath, 'with options:', options);
-
-    try {
-        // Validate directory exists
-        await fsasync.access(dirPath);
-        const stats = await fsasync.stat(dirPath);
-
-        if (!stats.isDirectory()) {
-            throw new Error('Path is not a directory');
-        }
-
-        const files = await scanDirectoryRecursive(dirPath, options);
-        console.log(`Found ${files.length} comic files in ${dirPath}`);
-
-        return {
-            success: true,
-            files: files,
-            count: files.length
-        };
-    } catch (error) {
-        console.error('Directory scan failed:', error);
-        return {
-            success: false,
-            error: error.message,
-            files: [],
-            count: 0
-        };
-    }
-});
-
 // Add IPC handler for counting files in directory (for progress)
 ipcMain.handle('count-files-in-directory', async (event, dirPath, options) => {
     try {
@@ -282,7 +240,6 @@ ipcMain.handle('read-directory', async (event, dirPath) => {
 
 // Replace the existing extract-cover handler
 ipcMain.handle('extract-cover', async (event, filePath) => {
-    console.log(`Extracting cover from: ${filePath}`);
     return await extractComicCover(filePath);
 });
 
@@ -317,379 +274,6 @@ ipcMain.handle('get-supported-formats', async () => {
     };
 });
 
-/// End of electron/main.js ///
-async function scanDirectoryRecursive(dirPath, options, currentDepth = 0) {
-    const results = [];
-
-    try {
-        const entries = await fsasync.readdir(dirPath, { withFileTypes: true });
-
-        for (const entry of entries) {
-            const fullPath = path.join(dirPath, entry.name);
-
-            // Skip excluded patterns
-            const shouldExclude = options.excludePatterns.some(pattern => {
-                if (pattern.startsWith('*')) {
-                    return entry.name.endsWith(pattern.slice(1));
-                }
-                return entry.name.includes(pattern);
-            });
-
-            if (shouldExclude) {
-                continue;
-            }
-
-            if (entry.isDirectory()) {
-                if (options.scanSubdirectories && currentDepth < options.maxDepth) {
-                    const subResults = await scanDirectoryRecursive(
-                        fullPath,
-                        options,
-                        currentDepth + 1
-                    );
-                    results.push(...subResults);
-                }
-            } else if (entry.isFile()) {
-                const ext = path.extname(entry.name).toLowerCase();
-                if (options.extensions.includes(ext)) {
-                    results.push(fullPath);
-                }
-            }
-        }
-    } catch (error) {
-        console.error(`Error scanning directory ${dirPath}:`, error);
-    }
-
-    return results;
-}
-
-// Function to read CBZ (ZIP) files using AdmZip
-async function readZipFile(filePath) {
-    try {
-        console.log(`Reading ZIP file: ${filePath}`);
-        // Read file as buffer
-        const fileBuffer = await fsasync.readFile(filePath);
-
-        // Try AdmZip first
-        try {
-            const zip = new AdmZip(fileBuffer);
-            const zipEntries = zip.getEntries();
-
-            const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
-            const pages = [];
-
-            for (const entry of zipEntries) {
-                if (!entry.isDirectory) {
-                    const ext = path.extname(entry.entryName).toLowerCase();
-                    if (imageExtensions.includes(ext)) {
-                        try {
-                            const buffer = entry.getData();
-                            pages.push({
-                                name: entry.entryName,
-                                data: buffer.toString('base64'),
-                                type: ext
-                            });
-                        } catch (err) {
-                            console.warn(`Failed to extract ${entry.entryName}:`, err);
-                        }
-                    }
-                }
-            }
-
-            // Sort pages by name
-            pages.sort((a, b) => a.name.localeCompare(b.name));
-
-            return {
-                success: true,
-                pages: pages,
-                totalPages: pages.length,
-                type: 'zip',
-                method: 'adm-zip'
-            };
-        } catch (admZipError) {
-            console.log('AdmZip failed, trying JSZip...', admZipError.message);
-
-            // Fallback to JSZip
-            try {
-                const zip = await JSZip.loadAsync(fileBuffer);
-                const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
-                const imageFiles = [];
-
-                zip.forEach((relativePath, zipEntry) => {
-                    if (!zipEntry.dir) {
-                        const ext = path.extname(relativePath).toLowerCase();
-                        if (imageExtensions.includes(ext)) {
-                            imageFiles.push({
-                                name: relativePath,
-                                entry: zipEntry
-                            });
-                        }
-                    }
-                });
-
-                // Sort by filename
-                imageFiles.sort((a, b) => a.name.localeCompare(b.name));
-
-                const pages = [];
-
-                for (const file of imageFiles) {
-                    try {
-                        const fileData = await file.entry.async('nodebuffer');
-                        pages.push({
-                            name: file.name,
-                            data: fileData.toString('base64'),
-                            type: path.extname(file.name)
-                        });
-                    } catch (err) {
-                        console.warn(`Failed to extract ${file.name}:`, err);
-                    }
-                }
-
-                return {
-                    success: true,
-                    pages: pages,
-                    totalPages: pages.length,
-                    type: 'zip',
-                    method: 'jszip'
-                };
-            } catch (jszipError) {
-                console.error('JSZip also failed:', jszipError.message);
-                throw new Error(`Both ZIP libraries failed: ${admZipError.message}, ${jszipError.message}`);
-            }
-        }
-
-    } catch (error) {
-        console.error('Error reading ZIP file:', error);
-        return {
-            success: false,
-            error: `ZIP reading failed: ${error.message}`,
-            type: 'zip'
-        };
-    }
-}
-
-// Function to read CBR (RAR) files using unrar-promise
-async function readRarFile(filePath) {
-    try {
-        console.log(`Reading RAR file: ${filePath}`);
-
-        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
-        const pages = [];
-
-        try {
-            // List files in RAR archive
-            const fileList = await unrar.list(filePath);
-            console.log(`RAR contains ${fileList.length} files`);
-
-            // Filter image files
-            const imageFiles = fileList.filter(file => {
-                const ext = path.extname(file.name).toLowerCase();
-                return imageExtensions.includes(ext);
-            });
-
-            console.log(`Found ${imageFiles.length} image files in RAR`);
-
-            // Sort by filename
-            imageFiles.sort((a, b) => a.name.localeCompare(b.name));
-
-            // Extract each image file
-            for (const file of imageFiles) {
-                try {
-                    console.log(`Extracting: ${file.name}`);
-                    const extracted = await unrar.extract(filePath, {
-                        files: [file.name],
-                        targetPath: path.dirname(filePath)
-                    });
-
-                    if (extracted && extracted[file.name]) {
-                        const fileBuffer = await fsasync.readFile(extracted[file.name]);
-                        pages.push({
-                            name: file.name,
-                            data: fileBuffer.toString('base64'),
-                            type: path.extname(file.name)
-                        });
-
-                        // Clean up extracted file
-                        await fsasync.unlink(extracted[file.name]).catch(() => { });
-                    }
-                } catch (extractError) {
-                    console.warn(`Failed to extract ${file.name}:`, extractError.message);
-                }
-            }
-
-            return {
-                success: true,
-                pages: pages,
-                totalPages: pages.length,
-                type: 'rar',
-                method: 'unrar-promise'
-            };
-
-        } catch (rarError) {
-            console.error('RAR extraction failed:', rarError);
-
-            // Fallback: Try to extract without listing first
-            try {
-                console.log('Trying fallback RAR extraction...');
-                const extracted = await unrar.unrar(filePath,  path.dirname(filePath));
-
-                if (extracted) {
-                    for (const [filename, extractedPath] of Object.entries(extracted)) {
-                        const ext = path.extname(filename).toLowerCase();
-                        if (imageExtensions.includes(ext)) {
-                            try {
-                                const fileBuffer = await fsasync.readFile(extractedPath);
-                                pages.push({
-                                    name: filename,
-                                    data: fileBuffer.toString('base64'),
-                                    type: ext
-                                });
-
-                                // Clean up
-                                await fsasync.unlink(extractedPath).catch(() => { });
-                            } catch (readError) {
-                                console.warn(`Failed to read extracted file ${filename}:`, readError);
-                            }
-                        }
-                    }
-
-                    pages.sort((a, b) => a.name.localeCompare(b.name));
-
-                    return {
-                        success: true,
-                        pages: pages,
-                        totalPages: pages.length,
-                        type: 'rar',
-                        method: 'unrar-promise-fallback'
-                    };
-                }
-            } catch (fallbackError) {
-                console.error('Fallback RAR extraction also failed:', fallbackError);
-                throw new Error(`RAR extraction failed: ${rarError.message}`);
-            }
-        }
-
-    } catch (error) {
-        console.error('Error reading RAR file:', error);
-        return {
-            success: false,
-            error: `RAR reading failed: ${error.message}`,
-            type: 'rar',
-            suggestion: 'Make sure the RAR file is not password protected or corrupted'
-        };
-    }
-}
-
-// Function to read comic files with better error handling
-async function readComicFile(filePath) {
-    const ext = path.extname(filePath).toLowerCase();
-
-    console.log(`\n=== Reading comic file ===`);
-    console.log(`File: ${filePath}`);
-    console.log(`Extension: ${ext}`);
-
-    try {
-        // Check if file exists and is readable
-        await fsasync.access(filePath);
-        const stats = await fsasync.stat(filePath);
-        console.log(`File size: ${stats.size} bytes`);
-
-        if (stats.size === 0) {
-            return {
-                success: false,
-                error: 'File is empty',
-                file: filePath
-            };
-        }
-
-        if (ext === '.cbz' || ext === '.zip') {
-            console.log('Detected ZIP format');
-            const result = await readZipFile(filePath);
-            console.log(`ZIP read result: ${result.success ? 'SUCCESS' : 'FAILED'}`);
-            if (!result.success) console.log(`Error: ${result.error}`);
-            return result;
-        }
-        else if (ext === '.cbr' || ext === '.rar') {
-            console.log('Detected RAR format');
-
-            // Check if unrar is available
-            // try {
-            //     await unrar.test();
-            //     console.log('unrar-promise is available');
-            // } catch (unrarError) {
-            //     console.error('unrar-promise not working:', unrarError);
-            //     return {
-            //         success: false,
-            //         error: 'RAR support not available. Please make sure unrar is installed on your system.',
-            //         type: 'rar',
-            //         suggestion: 'Install unrar: macOS: "brew install unrar", Ubuntu/Debian: "sudo apt-get install unrar"'
-            //     };
-            // }
-
-            const result = await readRarFile(filePath);
-            console.log(`RAR read result: ${result.success ? 'SUCCESS' : 'FAILED'}`);
-            if (!result.success) console.log(`Error: ${result.error}`);
-            return result;
-        }
-        else {
-            return {
-                success: false,
-                error: `Unsupported file format: ${ext}`,
-                supported: ['.cbz', '.zip', '.cbr', '.rar'],
-                file: filePath
-            };
-        }
-    } catch (error) {
-        console.error(`Failed to process comic file ${filePath}:`, error);
-        return {
-            success: false,
-            error: `File access error: ${error.message}`,
-            file: filePath
-        };
-    }
-}
-
-// Extract first page as cover with fallback
-async function extractComicCover(filePath) {
-    console.log(`\n=== Extracting cover ===`);
-    console.log(`File: ${filePath}`);
-
-    try {
-        const result = await readComicFile(filePath);
-
-        if (result.success && result.pages && result.pages.length > 0) {
-            const firstPage = result.pages[0];
-            const mimeType = getMimeType(firstPage.type);
-
-            console.log(`Cover extracted successfully`);
-            console.log(`- Pages: ${result.pages.length}`);
-            console.log(`- Type: ${result.type}`);
-            console.log(`- Method: ${result.method}`);
-
-            return {
-                success: true,
-                cover: firstPage.data,
-                mimeType: mimeType,
-                fileName: firstPage.name,
-                totalPages: result.pages.length,
-                type: result.type,
-                method: result.method
-            };
-        }
-
-        console.log(`Cover extraction failed:`, result.error || 'No pages found');
-        return {
-            success: false,
-            error: result.error || 'No pages found in comic',
-            type: result.type
-        };
-    } catch (error) {
-        console.error('Error extracting cover:', error);
-        return {
-            success: false,
-            error: error.message
-        };
-    }
-}
 
 // MIME type helper
 function getMimeType(extension) {
@@ -805,3 +389,504 @@ ipcMain.handle('test-rar-extraction', async (event, filePath) => {
         };
     }
 });
+
+/**
+ * Implementation of new methods and handlers goes here
+ */
+
+async function scanDirectoryRecursive(dirPath, options, currentDepth = 0) {
+    const results = [];
+
+    try {
+        const entries = await fsasync.readdir(dirPath, { withFileTypes: true });
+
+        for (const entry of entries) {
+            const fullPath = path.join(dirPath, entry.name);
+
+            // Skip excluded patterns
+            const shouldExclude = options.excludePatterns.some(pattern => {
+                if (pattern.startsWith('*')) {
+                    return entry.name.endsWith(pattern.slice(1));
+                }
+                return entry.name.includes(pattern);
+            });
+
+            if (shouldExclude) {
+                continue;
+            }
+
+            if (entry.isDirectory()) {
+                if (options.scanSubdirectories && currentDepth < options.maxDepth) {
+                    const subResults = await scanDirectoryRecursive(
+                        fullPath,
+                        options,
+                        currentDepth + 1
+                    );
+                    results.push(...subResults);
+                }
+            } else if (entry.isFile()) {
+                const ext = path.extname(entry.name).toLowerCase();
+                if (options.extensions.includes(ext)) {
+                    results.push(fullPath);
+                }
+            }
+        }
+    } catch (error) {
+        console.error(`Error scanning directory ${dirPath}:`, error);
+    }
+
+    return results;
+}
+
+// Function to read CBZ (ZIP) files
+async function readZipFile(filePath) {
+    try {
+        console.debug(`Reading ZIP file: ${filePath}`);
+
+        // Read file as buffer
+        const fileBuffer = await fsasync.readFile(filePath);
+
+        // Try AdmZip first
+        try {
+            const zip = new AdmZip(fileBuffer);
+            const zipEntries = zip.getEntries();
+            let metadata = null;
+
+            const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
+            const metaExtentions = ['.xml'];
+            const pages = [];
+
+            for (const entry of zipEntries) {
+                if (!entry.isDirectory) {
+                    const ext = path.extname(entry.entryName).toLowerCase();
+                    if (imageExtensions.includes(ext)) {
+                        try {
+                            const buffer = entry.getData();
+                            pages.push({
+                                name: entry.entryName,
+                                data: buffer.toString('base64'),
+                                type: ext,
+                                size: buffer.length
+                            });
+                        } catch (err) {
+                            console.warn(`Failed to extract ${entry.entryName}:`, err);
+                        }
+                    } else if (metaExtentions.includes(ext)) {
+                        try {
+                            const buffer = entry.getData();
+                            const parser = new XMLParser();
+                            let jsonObject = parser.parse(buffer.toString('utf-8'));
+                            console.log('JSON metadata Object:', jsonObject);
+                            metadata = jsonObject;
+                        } catch (err) {
+                            console.warn(`Failed to extract ${entry.entryName}:`, err);
+                        }
+                    }
+                }
+            }
+
+            // Sort pages by name
+            pages.sort((a, b) => a.name.localeCompare(b.name));
+
+            return {
+                success: true,
+                pages: pages,
+                metadata: metadata,
+                totalPages: pages.length,
+                type: 'zip',
+                method: 'adm-zip'
+            };
+        } catch (admZipError) {
+            console.log('AdmZip failed, trying JSZip...', admZipError.message);
+
+            // Fallback to JSZip
+            try {
+                const zip = await JSZip.loadAsync(fileBuffer);
+                const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
+                const imageFiles = [];
+
+                zip.forEach((relativePath, zipEntry) => {
+                    if (!zipEntry.dir) {
+                        const ext = path.extname(relativePath).toLowerCase();
+                        if (imageExtensions.includes(ext)) {
+                            imageFiles.push({
+                                name: relativePath,
+                                entry: zipEntry
+                            });
+                        }
+                    }
+                });
+
+                // Sort by filename
+                imageFiles.sort((a, b) => a.name.localeCompare(b.name));
+
+                const pages = [];
+
+                for (const file of imageFiles) {
+                    try {
+                        const fileData = await file.entry.async('nodebuffer');
+                        pages.push({
+                            name: file.name,
+                            data: fileData.toString('base64'),
+                            type: path.extname(file.name),
+                            size: fileData.length
+                        });
+                    } catch (err) {
+                        console.warn(`Failed to extract ${file.name}:`, err);
+                    }
+                }
+
+                return {
+                    success: true,
+                    pages: pages,
+                    totalPages: pages.length,
+                    type: 'zip',
+                    method: 'jszip'
+                };
+            } catch (jszipError) {
+                console.error('JSZip also failed:', jszipError.message);
+                return {
+                    success: false,
+                    error: `Failed to read ZIP file: ${jszipError.message}`,
+                    type: 'zip'
+                };
+            }
+        }
+
+    } catch (error) {
+        console.error('Error reading ZIP file:', error);
+        return {
+            success: false,
+            error: `ZIP reading failed: ${error.message}`,
+            type: 'zip'
+        };
+    }
+}
+
+function extractMetadata(metaEntries, archive) {
+    if (!metaEntries || !(metaEntries.length > 0)) return
+    const entry = metaEntries[0];
+    try {
+        const extracted = archive.extract({ files: [entry.name] });
+        const files = Array.from(extracted.files);
+        let xmlString = '';
+        const parser = new XMLParser();
+        if (files.length > 0 && files[0].extraction) {
+            const buffer = files[0].extraction;
+            xmlString = Buffer.from(buffer).toString('utf-8')
+        }
+        let jsonObject = parser.parse(xmlString);
+        return jsonObject;
+    } catch (err) {
+        console.warn(`Failed to extract ${entry.name}:`, err);
+    }
+}
+
+/**
+ *  Method to extract rar files
+ * @param {string} filePath 
+ */
+// Function to read CBR (RAR) files using node-unrar-js
+async function readRarFile(filePath) {
+    try {
+        // Read the RAR file as buffer
+        const fileBuffer = await fsasync.readFile(filePath);
+
+        // Load the RAR file using unrar.js
+        const archive = await unrar.createExtractorFromData({
+            data: fileBuffer
+        });
+
+        const list = archive.getFileList();
+        const fileHeaders = Array.from(list.fileHeaders);
+
+        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
+        const imageEntries = fileHeaders.filter(header => {
+            const ext = path.extname(header.name).toLowerCase();
+            return imageExtensions.includes(ext);
+        });
+
+        const metaExtentions = ['.xml'];
+        const metaEntries = fileHeaders.filter(header => {
+            const ext = path.extname(header.name).toLowerCase();
+            return metaExtentions.includes(ext);
+        });
+
+        const pages = [];
+        let metadata = extractMetadata(metaEntries, archive);
+        // Extract each image
+        for (const entry of imageEntries) {
+            try {
+                const extracted = archive.extract({ files: [entry.name] });
+                const files = Array.from(extracted.files);
+
+                if (files.length > 0 && files[0].extraction) {
+                    const buffer = files[0].extraction;
+                    pages.push({
+                        name: entry.name,
+                        data: Buffer.from(buffer).toString('base64'),
+                        type: path.extname(entry.name)
+                    });
+                }
+            } catch (err) {
+                console.warn(`Failed to extract ${entry.name}:`, err);
+            }
+        }
+
+        // Sort pages by name
+        pages.sort((a, b) => a.name.localeCompare(b.name));
+        return {
+            success: true,
+            pages: pages,
+            metadata: metadata,
+            totalPages: pages.length,
+            type: 'cbr'
+        };
+    } catch (error) {
+        console.error('Error reading RAR file:', error);
+        return {
+            success: false,
+            error: error.message,
+            suggestion: 'Make sure the RAR file is not password protected'
+        };
+    }
+}
+
+// Unified comic file reader
+async function readComicFile(filePath) {
+    const ext = path.extname(filePath).toLowerCase();
+
+    console.debug(`\n=== Reading comic file ===`);
+    console.debug(`File: ${filePath}`);
+    console.debug(`Extension: ${ext}`);
+
+    try {
+        // Check if file exists and is readable
+        await fsasync.access(filePath);
+        const stats = await fsasync.stat(filePath);
+        console.debug(`File size: ${stats.size} bytes`);
+
+        if (stats.size === 0) {
+            return {
+                success: false,
+                error: 'File is empty',
+                file: filePath
+            };
+        }
+
+        if (ext === '.cbz' || ext === '.zip') {
+            console.debug('Detected ZIP format');
+            const result = await readZipFile(filePath);
+            console.debug(`ZIP read result: ${result.success ? 'SUCCESS' : 'FAILED'}`);
+            if (!result.success) console.debug(`Error: ${result.error}`);
+            return result;
+        }
+        else if (ext === '.cbr' || ext === '.rar') {
+            console.debug('Detected RAR format');
+            const result = await readRarFile(filePath);
+            console.debug(`RAR read result: ${result.success ? 'SUCCESS' : 'FAILED'}`);
+            if (!result.success) {
+                console.debug(`Error: ${result.error}`);
+                if (result.suggestion) console.log(`Suggestion: ${result.suggestion}`);
+            }
+            return result;
+        }
+        else {
+            return {
+                success: false,
+                error: `Unsupported file format: ${ext}`,
+                supported: ['.cbz', '.zip', '.cbr', '.rar'],
+                file: filePath
+            };
+        }
+    } catch (error) {
+        console.error(`Failed to process comic file ${filePath}:`, error);
+        return {
+            success: false,
+            error: `File access error: ${error.message}`,
+            file: filePath
+        };
+    }
+}
+
+// Extract first page as cover
+async function extractComicCover(filePath) {
+    console.debug(`\n=== Extracting cover ===`);
+    console.debug(`File: ${filePath}`);
+
+    try {
+        const result = await readComicFile(filePath);
+
+        if (result.success && result.pages && result.pages.length > 0) {
+            // const firstPage = result.pages[0];
+            const firstPage = findCoverPage(result.pages);
+            const mimeType = getMimeType(firstPage.type);
+
+            console.debug(`Cover extracted successfully`);
+            console.debug(`- Pages: ${result.pages.length}`);
+            console.debug(`- Type: ${result.type}`);
+            console.debug(`- Method: ${result.method}`);
+
+            return {
+                success: true,
+                cover: firstPage.data,
+                mimeType: mimeType,
+                fileName: firstPage.name,
+                totalPages: result.pages.length,
+                type: result.type,
+                method: result.method
+            };
+        }
+
+        console.debug(`Cover extraction failed:`, result.error || 'No pages found');
+        return {
+            success: false,
+            error: result.error || 'No pages found in comic',
+            suggestion: result.suggestion || '',
+            type: result.type
+        };
+    } catch (error) {
+        console.error('Error extracting cover:', error);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+}
+
+function findCoverPage(pages) {
+    const coverRegex = /^(cover|page0*0|.*000)$/i;
+    if (pages && pages.length > 0) {
+        for (const page of pages) {
+            // Remove the extension for matching
+            const nameWithoutExt = page.name.split('.').slice(0, -1).join('.');
+            if (coverRegex.test(nameWithoutExt)) {
+                return page;
+            }
+        }
+        return pages[0];
+    }
+    return null;
+}
+
+// Test RAR file compatibility
+async function testRarCompatibility(filePath) {
+    try {
+        console.debug(`Testing RAR compatibility: ${filePath}`);
+
+        const fileBuffer = await fsasync.readFile(filePath);
+        const extractor = unrar.createExtractorFromData(fileBuffer);
+
+        // Try to get file list
+        const list = extractor.getFileList();
+
+        return {
+            success: true,
+            fileCount: list.fileHeaders.length,
+            rarVersion: 'detected',
+            canExtract: true,
+            details: {
+                size: fileBuffer.length,
+                fileHeaders: list.fileHeaders.slice(0, 5).map(h => ({
+                    name: h.name,
+                    size: h.unpSize,
+                    encrypted: h.flags.encrypted
+                }))
+            }
+        };
+    } catch (error) {
+        console.error('RAR compatibility test failed:', error);
+
+        return {
+            success: false,
+            error: error.message,
+            suggestion: 'This RAR file may use an unsupported format (RAR5) or be password protected.'
+        };
+    }
+}
+
+ipcMain.handle('test-rar-compatibility', async (event, filePath) => {
+    return await testRarCompatibility(filePath);
+});
+
+// Update file dialog to show all comic formats
+ipcMain.handle('select-files', async () => {
+    const result = await dialog.showOpenDialog({
+        properties: ['openFile', 'multiSelections'],
+        filters: [
+            { name: 'Comic Files', extensions: ['cbz', 'zip', 'cbr', 'rar'] },
+            { name: 'ZIP Files', extensions: ['cbz', 'zip'] },
+            { name: 'RAR Files', extensions: ['cbr', 'rar'] },
+            { name: 'All Files', extensions: ['*'] }
+        ]
+    });
+    return result.filePaths;
+});
+
+// Update directory scanning
+ipcMain.handle('scan-directory', async (event, dirPath, options) => {
+    try {
+        const files = await scanDirectoryRecursive(dirPath, options);
+        return {
+            success: true,
+            files: files,
+            count: files.length,
+            formats: {
+                zip: files.filter(f => f.endsWith('.cbz') || f.endsWith('.zip')).length,
+                rar: files.filter(f => f.endsWith('.cbr') || f.endsWith('.rar')).length
+            }
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: error.message,
+            files: [],
+            count: 0
+        };
+    }
+});
+
+// Add IPC handler to get format support info
+ipcMain.handle('get-format-support', async () => {
+    return {
+        formats: [
+            {
+                ext: '.cbz',
+                name: 'Comic Book ZIP',
+                supported: true,
+                library: 'adm-zip + jszip',
+                notes: 'Fully supported'
+            },
+            {
+                ext: '.zip',
+                name: 'ZIP Archive',
+                supported: true,
+                library: 'adm-zip + jszip',
+                notes: 'Fully supported'
+            },
+            {
+                ext: '.cbr',
+                name: 'Comic Book RAR',
+                supported: true,
+                library: 'node-unrar-js',
+                notes: 'Supports RAR4, limited RAR5 support'
+            },
+            {
+                ext: '.rar',
+                name: 'RAR Archive',
+                supported: true,
+                library: 'node-unrar-js',
+                notes: 'Supports RAR4, limited RAR5 support'
+            }
+        ],
+        limitations: [
+            'Password protected RAR files not supported',
+            'RAR5 format has limited support',
+            'Very large RAR files may cause memory issues'
+        ]
+    };
+});
+
+/**
+ * End of new methods and handlers
+ */

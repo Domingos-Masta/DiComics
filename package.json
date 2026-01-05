@@ -1,6 +1,12 @@
 {
-  "name": "bdhq-reader",
-  "version": "0.0.0",
+  "name": "dicomics",
+  "description": "DIComics is a pl provides a fast, offline-first desktop experience for organizing and reading digital comics, optimized for users with **large local collections** who want simplicity, performance, and control over their data.",
+  "author": {
+    "name": "Domingos Fernando",
+    "email": "domingos.m.fernando@gmail.com",
+    "url": "https://github.com/Domingos-Masta/DiComics.git"
+  },
+  "version": "0.0.1",
   "main": "electron/main.js",
   "scripts": {
     "ng": "ng",
@@ -37,6 +43,7 @@
     "@tailwindcss/typography": "^0.5.19",
     "@types/adm-zip": "^0.5.7",
     "adm-zip": "^0.5.16",
+    "fast-xml-parser": "^5.3.3",
     "jszip": "^3.10.1",
     "ngx-toastr": "^19.1.0",
     "node-unrar-js": "^2.0.2",
@@ -65,19 +72,22 @@
   },
   "build": {
     "appId": "com.bdhqreader.app",
-    "productName": "bdhq-reader",
+    "productName": "dicomics",
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "assets"
     },
     "files": [
       "electron/**/*",
       "dist/**/*"
     ],
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "assets/icon.ico"
     },
     "mac": {
-      "target": "dmg"
+      "target": "dmg",
+      "icon": "assets/icon.icns"
     },
     "linux": {
       "target": "AppImage"
