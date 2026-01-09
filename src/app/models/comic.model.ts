@@ -24,6 +24,22 @@ export interface Bookmarks {
   createdAt: Date;
 }
 
+// {
+//     "?xml": "",
+//     "ComicInfo": {
+//         "Series": "Shang-Chi (2021-)",
+//         "Number": 7,
+//         "Web": "https://www.comixology.com/Shang-Chi-2021-7/digital-comic/967852",
+//         "Summary": "WHO WAS SHANG-CHI’S MOTHER? Arrows will definitely fly when we flashback to the first meeting of Shang-Chi’s parents! Who was Shang-Chi’s mother? And how did someone so virtuous and heroic fall for an evil warlord like Zheng Zu? Plus, in the present, the tides begin to turn against Shang-Chi, as the mastermind gathering all of his foes stands revealed!",
+//         "Notes": "Scraped metadata from Comixology [CMXDB967852], [ASINB09G4HH93B], [RELDATE:2022-01-05]",
+//         "Publisher": "Marvel",
+//         "Genre": "Martial Arts, Superhero",
+//         "PageCount": 21,
+//         "LanguageISO": "en",
+//         "ScanInformation": ""
+//     }
+// }
+
 export interface ComicInfo {
     series?: string;
     web?: string;
@@ -33,6 +49,7 @@ export interface ComicInfo {
     volume?: string;
     publisher?: string;
     year?: number;
+    number?: number;
     month?: number;
     writer?: string;
     penciller?: string;
@@ -49,7 +66,7 @@ export interface ComicInfo {
     tags?: string[];
 }
 
-export type ReadingMode = 'single' | 'double' | 'webtoon' | 'manga';
+export type ReadingMode = 'single' | 'double' | 'webtoon' | 'manga' | 'immersive';
 export type MusicGenre = 'ambient' | 'epic' | 'chill' | 'lofi' | 'cinematic' | 'none';
 
 export interface ComicPage {

@@ -293,6 +293,10 @@ export class IndexingService {
                 } else {
                     console.log(`✗ No cover extracted: ${coverData.error || 'Unknown error'}`);
                 }
+                // Normalize metadata keys to lowercase
+                if (coverData.metadata || coverData.metadata.ComicInfo) {
+                    metadata = this.normalizeObjectKeys(coverData.metadata.ComicInfo);
+                }
 
                 // Get total pages if not from cover extraction
                 if (totalPages === 0) {
@@ -366,6 +370,19 @@ export class IndexingService {
 
             return basicComic;
         }
+    }
+
+    private normalizeObjectKeys(obj: any): any {
+        if (typeof obj !== 'object' || obj === null) return obj;
+
+        const normalized: any = Array.isArray(obj) ? [] : {};
+
+        for (const key of Object.keys(obj)) {
+            const lowerKey = key.toLowerCase();
+            normalized[lowerKey] = this.normalizeObjectKeys(obj[key]);
+        }
+
+        return normalized;
     }
 
     private async updateComic(comic: Comic, filePath: string): Promise<void> {

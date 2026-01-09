@@ -32,4 +32,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onOpenAboutModal: (callback) => ipcRenderer.on('on-about-click', callback),
     getAppVersion: () => ipcRenderer.invoke('get-app-version'),
     handleFileOpen: (callback) => ipcRenderer.on('open-file', (event, ...args) => callback(...args))
+    
 });

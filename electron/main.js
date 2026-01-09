@@ -10,8 +10,8 @@ const { log } = require('console');
 
 let mainWindow;
 // Handle the file paths globally
-let filesToOpen = [];
 const isMac = process.platform === 'darwin'
+
 
 
 function createWindow() {
@@ -23,7 +23,6 @@ function createWindow() {
         frame: true,
         title: 'DiComics',
         // titleBarStyle: 'hiddenInset', // For macOSrm 
-        titleBarStyle: 'hidden',
         backgroundColor: '#0f172a',
         webPreferences: {
             nodeIntegration: false,
@@ -33,8 +32,11 @@ function createWindow() {
         icon: path.join(__dirname, 'src/icon.ico'),
     });
 
+    // Single Instance Lock for file opening
+    const gotTheLock = app.requestSingleInstanceLock();
+
     // Custom menu
-    const template = [
+    const menuTemplate = [
         ...(isMac ?
             [{
                 label: app.name,
@@ -99,61 +101,99 @@ function createWindow() {
     ];
 
     try {
-        const menu = Menu.buildFromTemplate(template);
+        const menu = Menu.buildFromTemplate(menuTemplate);
         Menu.setApplicationMenu(menu);
     } catch (e) {
         console.error('Failed to set application menu:', e);
     }
 
-    // Load app
-    // Open DevTools in development
-    // if (process.env.NODE_ENV === 'development') {
-    if (process.env.npm_lifecycle_event === 'electron-dev') {
-        mainWindow.loadURL('http://localhost:4200');
-        mainWindow.webContents.openDevTools();
+    /**
+     * Single Instance Handling
+     */
+    if (!gotTheLock) {
+        app.quit();
     } else {
-        mainWindow.loadFile(path.join(__dirname, './../dist/dicomics/browser/index.html'));
-    }
+        app.on('second-instance', (event, commandLine, workingDirectory) => {
+            // Someone tried to run a second instance
+            if (mainWindow) {
+                if (mainWindow.isMinimized()) mainWindow.restore();
+                mainWindow.focus();
 
-    // Once the window is ready, process any pending files
-    mainWindow.webContents.on('did-finish-load', () => {
-        while (filesToOpen.length > 0) {
-            mainWindow.webContents.send('open-file', filesToOpen.shift());
+                // Parse command line for file paths
+                const filePath = getFilePathFromArgs(commandLine);
+                if (filePath) {
+                    mainWindow.webContents.send('open-file', filePath);
+                }
+            }
+        });
+
+        // Handle file opening on first instance
+        const filePath = getFilePathFromArgs(process.argv);
+        if (filePath) {
+            // Wait for window to be ready
+            mainWindow.webContents.on('did-finish-load', () => {
+                mainWindow.webContents.send('open-file', filePath);
+            });
         }
-    });
+
+        // Load app
+        // Open DevTools in development
+        // if (process.env.NODE_ENV === 'development') {
+        if (process.env.npm_lifecycle_event === 'electron-dev') {
+            mainWindow.loadURL('http://localhost:4200');
+            mainWindow.webContents.openDevTools();
+        } else {
+            mainWindow.loadFile(path.join(__dirname, './../dist/dicomics/browser/index.html'));
+        }
+    }
 
     mainWindow.on('closed', () => {
         mainWindow = null;
     });
 }
 
-// Function to process the file paths
-function handleFileOpen(filePath) {
-    if (mainWindow) {
-        // If the window is ready, send the file path to the renderer process via IPC
-        mainWindow.webContents.send('open-file', filePath);
-    } else {
-        // If the window is not yet created, store the path to be processed later
-        filesToOpen.push(filePath);
-    }
-}
-
-// Windows/Linux: Parse process.argv
-if (process.platform === 'win32' || process.platform === 'linux') {
-    const fileArg = process.argv[1]; // The second argument is often the file path
-    if (fileArg && fileArg !== '.') { // Check if a path was passed
-        handleFileOpen(fileArg);
-    }
-}
 
 // App lifecycle
 app.whenReady().then(createWindow);
 
-// macOS: 'open-file' event
+// macOS specific handling
 app.on('open-file', (event, filePath) => {
-    event.preventDefault(); // Prevent default OS handling
-    handleFileOpen(filePath);
+    event.preventDefault();
+    if (mainWindow) {
+        mainWindow.webContents.send('open-file', filePath);
+    } else {
+        // Store for when window is ready
+        app.once('ready', () => {
+            if (mainWindow) {
+                mainWindow.webContents.on('did-finish-load', () => {
+                    mainWindow.webContents.send('open-file', filePath);
+                });
+            }
+        });
+    }
 });
+
+function getFilePathFromArgs(args) {
+    // Skip first two args (electron binary and app path)
+    for (let i = 2; i < args.length; i++) {
+        const arg = args[i];
+        // Skip flags
+        if (!arg.startsWith('-') && !arg.startsWith('--')) {
+            try {
+                // Check if it's a valid file path
+                const stat = fs.statSync(arg);
+                if (stat.isFile()) {
+                    return path.resolve(arg);
+                }
+            } catch (err) {
+                // Not a valid file path, continue
+            }
+        }
+    }
+    return null;
+}
+
+
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {

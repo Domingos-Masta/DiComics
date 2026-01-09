@@ -88,26 +88,6 @@ export class HomeComponent implements OnInit, OnDestroy {
           this.openOnChangeAboutDialog();
         });
       });
-      (window as any).electronAPI.handleFileOpen(async (filePath: string) => {
-        this.ngZone.run(async () => {
-          if (filePath) {
-            console.log('Received file to open:', filePath);
-            try {
-              const comic = await this.indexingService.indexFile(filePath);
-              if (comic) {
-                this.generatePlaceholder(comic);
-                this.loadComics();
-                this.showNotification(`Added "${comic.title}" to library`, 'success');
-              } else {
-                this.showNotification('File is already in your library.', 'info');
-              }
-            } catch (error) {
-              console.error('Error indexing file from open-file event:', error);
-              this.showNotification('Error adding file to library. Please try again.', 'error');
-            }
-          }
-        });
-      });
     }
   }
 

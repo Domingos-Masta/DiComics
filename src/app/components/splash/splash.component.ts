@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, NgZone, Input } from '@angular/core';
 import { Router } from '@angular/router';
 
 @Component({
@@ -9,17 +9,23 @@ import { Router } from '@angular/router';
 export class SplashComponent implements OnInit, AfterViewInit {
   loading = true;
   progress = 0;
+  @Input() filePath: string | null = null;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router) { }
 
-  ngOnInit(): void {
+  ngOnInit(){
+    console.log('File Path received: ', this.filePath);
     this.simulateLoading();
   }
 
   ngAfterViewInit(): void {
     // Auto-navigate after 5 seconds
     setTimeout(() => {
-      this.router.navigate(['/']);
+      if (this.filePath) {
+        this.router.navigate(['/'], { queryParams: { file: this.filePath } });
+      } else {
+        this.router.navigate(['/']);
+      }
     }, 5000);
   }
 
