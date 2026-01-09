@@ -15,7 +15,7 @@
   }
 
   <!-- Top Navigation Bar -->
-  @if (showControls) {
+  @if (!showControls) {
     <nav class="top-nav glass-effect">
       <div class="nav-left">
         <button class="nav-btn" (click)="router.navigate(['/'])" title="Back to Library">
@@ -46,8 +46,8 @@
               <button class="mode-btn" 
                       [class.active]="readingMode === mode.id"
                       (click)="setReadingMode(mode.id)"
-                      [title]="mode.name">
-                <span class="mode-icon">{{ mode.icon }}</span>
+                      [title]="mode.description">
+                <svg class="mode-icon" [innerHTML]="mode.iconSafe"></svg>
                 <span class="mode-text">{{ mode.name }}</span>
               </button>
             }
@@ -220,42 +220,98 @@
   <main class="reader-main" #pageViewer>
     @if (!loading && pages.length > 0) {
       <div class="page-container" (click)="toggleControls()">
-        <!-- Single Page Mode -->
-        @if (readingMode === 'single') {
-          <div class="page-wrapper">
-            <img #pageImage
-                 [src]="getImageUrl(currentPage!)"
-                 [alt]="'Page ' + (currentPageIndex + 1)"
-                 class="page-image"
-                 [style.transform]="'scale(' + (zoomLevel / 100) + ')'">
-          </div>
-        }
-        
-        <!-- Double Page Mode -->
-        @if (readingMode === 'double') {
-          <div class="double-page-wrapper">
-            @if (currentPageIndex > 0) {
-              <div class="double-page">
-                <img [src]="getImageUrl(pages[currentPageIndex - 1])"
-                     [alt]="'Page ' + currentPageIndex"
-                     class="page-image left-page">
-              </div>
-            }
-            <div class="double-page">
+<!-- Reading Mode Display -->
+        @switch (readingMode) {
+          <!-- Single Page Mode -->
+          @case ('single') {
+            <div class="page-wrapper">
               <img #pageImage
                    [src]="getImageUrl(currentPage!)"
                    [alt]="'Page ' + (currentPageIndex + 1)"
-                   class="page-image right-page"
+                   class="page-image"
                    [style.transform]="'scale(' + (zoomLevel / 100) + ')'">
             </div>
-            @if (currentPageIndex < pages.length - 1) {
+          }
+          
+          <!-- Double Page Mode -->
+          @case ('double') {
+            <div class="double-page-wrapper">
+              @if (currentPageIndex > 0) {
+                <div class="double-page">
+                  <img [src]="getImageUrl(pages[currentPageIndex - 1])"
+                       [alt]="'Page ' + currentPageIndex"
+                       class="page-image left-page">
+                </div>
+              }
               <div class="double-page">
-                <img [src]="getImageUrl(pages[currentPageIndex + 1])"
-                     [alt]="'Page ' + (currentPageIndex + 2)"
-                     class="page-image right-page">
+                <img #pageImage
+                     [src]="getImageUrl(currentPage!)"
+                     [alt]="'Page ' + (currentPageIndex + 1)"
+                     class="page-image right-page"
+                     [style.transform]="'scale(' + (zoomLevel / 100) + ')'">
               </div>
-            }
-          </div>
+              @if (currentPageIndex < pages.length - 1) {
+                <div class="double-page">
+                  <img [src]="getImageUrl(pages[currentPageIndex + 1])"
+                       [alt]="'Page ' + (currentPageIndex + 2)"
+                       class="page-image right-page">
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Webtoon Mode (Vertical Scroll) -->
+          @case ('webtoon') {
+            <div class="webtoon-wrapper">
+              <img #pageImage
+                   [src]="getImageUrl(currentPage!)"
+                   [alt]="'Page ' + (currentPageIndex + 1)"
+                   class="page-image webtoon-image"
+                   [style.transform]="'scale(' + (zoomLevel / 100) + ')'">
+            </div>
+          }
+
+          <!-- Manga Mode (Right-to-Left) -->
+          @case ('manga') {
+            <div class="manga-wrapper">
+              @if (currentPageIndex < pages.length - 1) {
+                <div class="manga-page right">
+                  <img [src]="getImageUrl(pages[currentPageIndex + 1])"
+                       [alt]="'Page ' + (currentPageIndex + 2)"
+                       class="page-image manga-image">
+                </div>
+              }
+              <div class="manga-page left">
+                <img #pageImage
+                     [src]="getImageUrl(currentPage!)"
+                     [alt]="'Page ' + (currentPageIndex + 1)"
+                     class="page-image manga-image"
+                     [style.transform]="'scale(' + (zoomLevel / 100) + ')'">
+              </div>
+            </div>
+          }
+
+          <!-- Immersive Mode (Panel by Panel) -->
+          @case ('immersive') {
+            <div class="immersive-wrapper">
+              <div class="panel-display"
+                   [style.background-image]="'url(' + getImageUrl(currentPage!) + ')'">
+                @if (getCurrentPanel(); as panel) {
+                  <div class="panel-highlight"
+                       [style.left.%]="panel.x"
+                       [style.top.%]="panel.y"
+                       [style.width.%]="panel.width"
+                       [style.height.%]="panel.height"
+                       [style.transform]="'scale(' + (zoomLevel / 100) + ')'">
+                  </div>
+                }
+                <div class="panel-info">
+                  <span class="panel-counter">Panel {{ currentPanel + 1 }} of {{ panelsInCurrentPage.length }}</span>
+                  <span class="page-counter">Page {{ currentPageIndex + 1 }} of {{ pages.length }}</span>
+                </div>
+              </div>
+            </div>
+          }
         }
         
         <!-- Navigation Arrows -->

@@ -4,7 +4,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CbzService } from '../../services/cbz.service';
 import { StorageService } from '../../services/storage.service';
-import { Comic, ComicPage, ReadingProgress } from '../../models/comic.model';
+import { Comic, ComicPage, ReadingProgress, ReadingMode, VIEW_MODES, FIT_MODES, Panel } from '../../models/comic.model';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-reader',
@@ -28,29 +29,25 @@ export class ReaderComponent implements OnInit, AfterViewInit, OnDestroy {
   fullscreen: boolean = false;
   zoomLevel: number = 100;
   fitMode: 'width' | 'height' | 'best' = 'height';
-  readingMode: 'single' | 'double' = 'single';
+  readingMode: ReadingMode = 'single';
   controlsTimeout: any;
   sidebarTimeout: any;
 
-  // View modes
-  viewModes = [
-    { id: 'single', name: 'Single Page', icon: '📄' },
-    { id: 'double', name: 'Double Page', icon: '📖' }
-  ];
+  // Use imported view modes
+  viewModes = VIEW_MODES;
+  fitModes = FIT_MODES;
 
-  // Fit modes
-  fitModes = [
-    { id: 'height', name: 'Fit Height', icon: '↕️' },
-    { id: 'width', name: 'Fit Width', icon: '↔️' },
-    { id: 'best', name: 'Best Fit', icon: '⬜' }
-  ];
+  // Immersive mode panel state
+  currentPanel: number = 0;
+  panelsInCurrentPage: Panel[] = [];
 
   constructor(
     private route: ActivatedRoute,
     public router: Router,
     private cbzService: CbzService,
     private storageService: StorageService,
-    private renderer: Renderer2
+    private renderer: Renderer2,
+    private sanitizer: DomSanitizer
   ) { }
 
   async ngOnInit(): Promise<void> {
@@ -60,9 +57,24 @@ export class ReaderComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.comic) {
       await this.loadPages();
       this.restoreProgress();
-    }
 
+      // Check if immersive mode was requested via query params
+      this.route.queryParams.subscribe(params => {
+        if (params['readingMode'] === 'immersive') {
+          this.readingMode = 'immersive';
+          this.loadPanelsForPage(this.currentPageIndex);
+        }
+      });
+    }
+    this.sanitizeModeIcons();
     this.resetControlsTimer();
+  }
+
+  private sanitizeModeIcons() {
+    this.viewModes = this.viewModes.map(mode => ({
+      ...mode,
+      iconSafe: this.sanitizer.bypassSecurityTrustHtml(mode.icon) as SafeHtml
+    }));
   }
 
   ngAfterViewInit(): void {
@@ -157,6 +169,11 @@ export class ReaderComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   nextPages(): void {
+    if (this.readingMode === 'immersive') {
+      this.nextPanel();
+      return;
+    }
+
     if (this.currentPageIndex < this.pages.length - 1) {
       const increment = this.readingMode === 'double' ? 2 : 1;
       this.currentPageIndex = Math.min(this.currentPageIndex + increment, this.pages.length - 1);
@@ -167,6 +184,11 @@ export class ReaderComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   previousPage(): void {
+    if (this.readingMode === 'immersive') {
+      this.previousPanel();
+      return;
+    }
+
     if (this.currentPageIndex > 0) {
       const decrement = this.readingMode === 'double' ? 2 : 1;
       this.currentPageIndex = Math.max(0, this.currentPageIndex - decrement);
@@ -174,6 +196,61 @@ export class ReaderComponent implements OnInit, AfterViewInit, OnDestroy {
       this.saveProgress();
       this.scrollToTop();
     }
+  }
+
+  // Immersive mode panel navigation
+  private loadPanelsForPage(pageIndex: number): void {
+    const page = this.pages[pageIndex];
+    if (page?.panels && page.panels.length > 0) {
+      // Sort panels left-to-right, top-to-bottom
+      this.panelsInCurrentPage = page.panels.sort((a, b) => {
+        if (Math.abs(a.y - b.y) < 50) {
+          return a.x - b.x; // Same row, sort by x
+        }
+        return a.y - b.y; // Different rows, sort by y
+      });
+    } else {
+      // No panels detected, treat entire page as one panel
+      this.panelsInCurrentPage = [{
+        index: 0,
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 100,
+        order: 0
+      }];
+    }
+    this.currentPanel = 0;
+  }
+
+  private nextPanel(): void {
+    if (this.currentPanel < this.panelsInCurrentPage.length - 1) {
+      this.currentPanel++;
+      this.markPageAsRead(this.currentPageIndex);
+    } else if (this.currentPageIndex < this.pages.length - 1) {
+      this.currentPageIndex++;
+      this.loadPanelsForPage(this.currentPageIndex);
+      this.currentPanel = 0;
+      this.markPageAsRead(this.currentPageIndex);
+      this.saveProgress();
+    }
+  }
+
+  private previousPanel(): void {
+    if (this.currentPanel > 0) {
+      this.currentPanel--;
+      this.markPageAsRead(this.currentPageIndex);
+    } else if (this.currentPageIndex > 0) {
+      this.currentPageIndex--;
+      this.loadPanelsForPage(this.currentPageIndex);
+      this.currentPanel = this.panelsInCurrentPage.length - 1;
+      this.markPageAsRead(this.currentPageIndex);
+      this.saveProgress();
+    }
+  }
+
+  getCurrentPanel(): Panel | undefined {
+    return this.panelsInCurrentPage[this.currentPanel];
   }
 
   goToPageSec(pageIndexEvent: any) {
@@ -185,6 +262,9 @@ export class ReaderComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (pageIndex >= 0 && pageIndex < this.pages.length) {
       this.currentPageIndex = pageIndex;
+      if (this.readingMode === 'immersive') {
+        this.loadPanelsForPage(pageIndex);
+      }
       this.markPageAsRead(pageIndex);
       this.saveProgress();
       this.scrollToTop();
@@ -308,8 +388,11 @@ export class ReaderComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  setReadingMode(mode: 'single' | 'double' | any): void {
+  setReadingMode(mode: ReadingMode | any): void {
     this.readingMode = mode;
+    if (mode === 'immersive') {
+      this.loadPanelsForPage(this.currentPageIndex);
+    }
   }
 
   toggleControls(): void {

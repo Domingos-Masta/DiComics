@@ -6,7 +6,7 @@
     "email": "domingos.m.fernando@gmail.com",
     "url": "https://github.com/Domingos-Masta/DiComics.git"
   },
-  "version": "1.0.2",
+  "version": "1.0.4",
   "main": "electron/main.js",
   "scripts": {
     "ng": "ng",

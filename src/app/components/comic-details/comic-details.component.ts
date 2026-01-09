@@ -3,7 +3,7 @@ import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Comic, ComicInfo, MusicGenre, ReadingMode } from '../../models/comic.model';
+import { Comic, ComicInfo, VIEW_MODES, MUSIC_GENRES, MONTHS, ReadingMode, MusicGenre } from '../../models/comic.model';
 import { FileSizePipe } from '../../pipes/file-size-pipe';
 import { StorageService } from '../../services/storage.service';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -20,42 +20,22 @@ export class ComicDetailsComponent implements OnInit, OnDestroy {
 
   editableMetadata: ComicInfo = {};
 
-  // Reading modes
-  readingModes = [
-    { id: 'single' as ReadingMode, name: 'Single Page', icon: '<path d="M3 5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5z" stroke="currentColor" stroke-width="2"/>', description: 'View one page at a time', iconSafe: '' as SafeHtml },
-    { id: 'double' as ReadingMode, name: 'Double Page', icon: '<path d="M3 5a2 2 0 012-2h8a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5zM17 5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2V5z" stroke="currentColor" stroke-width="2"/>', description: 'View two pages side by side' , iconSafe: '' as SafeHtml },
-    { id: 'webtoon' as ReadingMode, name: 'Webtoon', icon: '<path d="M12 19V5M5 12h14" stroke="currentColor" stroke-width="2"/>', description: 'Continuous vertical scrolling', iconSafe: '' as SafeHtml },
-    { id: 'manga' as ReadingMode, name: 'Manga', icon: '<path d="M3 6l9 4 9-4M3 6v13l9 4 9-4V6M3 6l9-4 9 4" stroke="currentColor" stroke-width="2"/>', description: 'Right-to-left reading', iconSafe: '' as SafeHtml },
-    { id: 'immersive' as ReadingMode, name: 'Immersive', icon: '<path d="M3 3h7v2H5v5H3V3zm18 0v7h-2V5h-5V3h7zM3 21v-7h2v5h5v2H3zm18 0h-7v-2h5v-5h2v7z" stroke="currentColor" stroke-width="2"/>', description: 'Immersive full-screen reading', iconSafe: '' as SafeHtml }
-  ];
+  // Reading modes from model
+  readingModes = VIEW_MODES;
 
-  selectedReadingMode: ReadingMode = 'single';
+  selectedReadingMode = 'single';
 
-  // Music settings
+  // Music settings from model
   musicEnabled = false;
-  musicGenres = [
-    { id: 'ambient' as MusicGenre, name: 'Ambient', emoji: '🌌' },
-    { id: 'epic' as MusicGenre, name: 'Epic', emoji: '⚔️' },
-    { id: 'chill' as MusicGenre, name: 'Chill', emoji: '🌿' },
-    { id: 'lofi' as MusicGenre, name: 'Lo-Fi', emoji: '☕' },
-    { id: 'cinematic' as MusicGenre, name: 'Cinematic', emoji: '🎬' },
-    { id: 'none' as MusicGenre, name: 'None', emoji: '🔇' }
-  ];
+  musicGenres = MUSIC_GENRES;
 
-  selectedGenre: MusicGenre = 'ambient';
+  selectedGenre: any = 'ambient';
   isPlaying = false;
   volume = 50;
   currentTrack?: { title: string; artist: string; };
 
-  // Months for dropdown
-  months = [
-    { value: 1, name: 'January' }, { value: 2, name: 'February' },
-    { value: 3, name: 'March' }, { value: 4, name: 'April' },
-    { value: 5, name: 'May' }, { value: 6, name: 'June' },
-    { value: 7, name: 'July' }, { value: 8, name: 'August' },
-    { value: 9, name: 'September' }, { value: 10, name: 'October' },
-    { value: 11, name: 'November' }, { value: 12, name: 'December' }
-  ];
+  // Months for dropdown from model
+  months = MONTHS;
 
   coverUrl?: string;
   coverPlaceholderClass = '';
@@ -64,8 +44,8 @@ export class ComicDetailsComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private storageService: StorageService
-    , private sanitizer: DomSanitizer
+    private storageService: StorageService,
+    private sanitizer: DomSanitizer
   ) { }
 
   ngOnInit() {

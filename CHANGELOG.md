@@ -5,6 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2026-01-09
+
+### Added
+- **Multiple Reading Modes**:
+  - Single Page: Traditional single-page reading
+  - Double Page: Side-by-side dual-page view with 3D perspective
+  - Webtoon: Vertical continuous scrolling for web comics
+  - Manga: Right-to-left reading with perspective effects
+  - Immersive: Panel-by-panel reading with automatic panel detection
+- **Immersive Mode Features**:
+  - Automatic panel detection and sequencing (LTR)
+  - Panel highlighting with animated glow effect
+  - Real-time panel and page progress indicators
+  - Smooth panel-to-panel navigation
+- **Sanitized SVG Icons**:
+  - All reading modes have visual SVG icons
+  - Proper SafeHtml rendering for security
+  - Cross-component icon consistency
+
+### Changed
+- **Code Refactoring**:
+  - Moved static data (reading modes, music genres, months) from components to models
+  - Created new interfaces: `ViewMode`, `FitModeOption`, `MusicGenreOption`, `MonthOption`, `Panel`
+  - Centralized constants in `comic.model.ts` for better maintainability
+  - Updated Reader component to use imported modes instead of hardcoded values
+  - Updated Comic Details component to import modes from models
+- **Reader Component**:
+  - Refactored reading mode handling with switch statement
+  - Added panel detection and navigation logic
+  - Implemented `loadPanelsForPage()` for immersive mode
+  - Updated `nextPages()`/`previousPage()` to handle all reading modes
+  - Added `getCurrentPanel()` method for immersive display
+  - Integrated DomSanitizer for SVG icon rendering
+- **Component Templates**:
+  - Reader HTML updated with `@switch` for mode-based rendering
+  - All mode buttons now use imported modes with sanitized icons
+  - Added immersive panel display with position highlights
+  - Improved semantic HTML structure
+- **Styling Improvements**:
+  - Added comprehensive styles for webtoon, manga, and immersive modes
+  - Panel animation with `panelPulse` keyframe animation
+  - SVG icon styling for proper color inheritance
+  - Removed duplicate and unused CSS rules
+  - Fixed SCSS compatibility warnings
+
+### Removed
+- Duplicate static data definitions from components
+- Unused CSS classes and rules
+- Hardcoded mode arrays from component TypeScript files
+
 ## [0.1.0] - 2026-01-09
 
 ### Added
