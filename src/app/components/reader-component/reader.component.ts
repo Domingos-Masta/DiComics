@@ -204,10 +204,10 @@ export class ReaderComponent implements OnInit, AfterViewInit, OnDestroy {
   toggleBookmark(): void {
     if (!this.comic) return;
 
-    const index = this.comic.bookmarks.indexOf(this.currentPageIndex);
+    const index = this.comic.bookmarks.indexOf({ pageNumber: this.currentPageIndex } as any);
     if (index === -1) {
-      this.comic.bookmarks.push(this.currentPageIndex);
-      this.comic.bookmarks.sort((a, b) => a - b);
+      this.comic.bookmarks.push({ pageNumber: this.currentPageIndex } as any);
+      this.comic.bookmarks.sort((a, b) => a.pageNumber - b.pageNumber);
     } else {
       this.comic.bookmarks.splice(index, 1);
     }
@@ -215,7 +215,7 @@ export class ReaderComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   isBookmarked(): boolean {
-    return this.comic?.bookmarks.includes(this.currentPageIndex) || false;
+    return this.comic?.bookmarks.includes({ pageNumber: this.currentPageIndex } as any) || false;
   }
 
   isPageRead(pageIndex: number): boolean {
@@ -240,6 +240,12 @@ export class ReaderComponent implements OnInit, AfterViewInit, OnDestroy {
     } else {
       this.renderer.removeClass(document.body, 'fullscreen');
     }
+  }
+
+  hasBookmark(comic: Comic, pageNumber: number): boolean {
+    return !comic?.bookmarks?.some(
+      b => b.pageNumber === pageNumber
+    );
   }
 
   zoomIn(): void {

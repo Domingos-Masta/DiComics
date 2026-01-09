@@ -5,7 +5,141 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0] - 2026-01-09
+
+### Added
+- **New Components**:
+  - About Component: Displays application information, features, and copyright/license details
+  - Comic Details Component: Shows comprehensive comic information and metadata
+- **New Services**:
+  - Music Service: Manages background sound effects and audio playback
+  - Database Service: Foundation for future data persistence enhancements
+- **UI Assets**:
+  - SVG Icons: Upload, search, refresh, settings, index, about, immersive icons
+  - Logo Assets: PNG versions of DiComics logo in multiple sizes
+  - Icon Assets: Windows ICO files for application branding
+- **Audio Assets**:
+  - Background music tracks for immersive reading experience (4 tracks)
+  - Gotham City Epic Cinematic Orchestral
+  - Joking Sound Humorous
+  - Sneaky Background Music
+  - Suspense Tension Background Music
+- **UI/UX Enhancements**:
+  - Context menus for comic cards with multiple actions
+  - Enhanced home component with improved layout and controls
+  - Glass-effect styling for modern UI appearance
+  - Splash component with visual improvements
+- **Feature Additions**:
+  - Smart comic management interface
+  - Background sound effects integration
+  - Immersive reading environment styling
+  - Enhanced copyright and license information display
+
+### Changed
+- **Home Component**:
+  - Refactored layout for better usability
+  - Added context menu system for comic operations
+  - Improved filtering and sorting interfaces
+  - Enhanced visual design with glass-effect elements
+- **Reader Component**:
+  - Updated navigation methods
+  - Improved page interaction handling
+- **Electron Configuration**:
+  - Reorganized icon assets into structured directories
+  - Updated main.js and preload.js scripts
+  - Added build configuration for multiple platforms
+- **Asset Structure**:
+  - Consolidated old icon assets into legacy directory
+  - Created organized SVG assets directory
+  - Added dedicated music assets directory
+  - Separated image assets by type
+
+### Improved
+- **Build System**: Enhanced Angular configuration with proper asset paths
+- **Developer Experience**: Better asset organization and file structure
+- **Visual Design**: Modern glass-effect UI components throughout the application
+- **Comic Model**: Extended properties for enhanced metadata handling
+
+### Removed
+- Sample comic file (example assets)
+- Outdated icon versions (moved to legacy directory)
+
+---
+
 ## [0.0.1] - 2026-01-05
+
+### Added
+- **Project Branding**: Official rebranding from "bdhq-reader" to "DiComics"
+- **Author Information**: Added project author metadata (Domingos Fernando)
+- **Project Description**: Comprehensive description of the application's purpose and features
+- **XML Support**: Added `fast-xml-parser` dependency for enhanced metadata parsing
+- **Build Configuration**: 
+  - Added Electron Builder configuration with app icons
+  - Defined build resources directory structure
+  - Added icon paths for Windows (.ico) and macOS (.icns)
+- **Reader Navigation**: 
+  - New `goToPageSec()` method for slider-based page navigation
+  - Refactored page navigation logic for better separation of concerns
+- **Indexing Improvements**: 
+  - Fixed quick scan completion event handling
+  - Added proper completion status to `indexingCompleted` event
+
+### Changed
+- **Package Metadata**:
+  - Updated project name to "dicomics"
+  - Bumped version from 0.0.0 to 0.0.1
+  - Updated Electron Builder product name to match rebranding
+- **Component References**: 
+  - Updated app title signal to reflect new project name
+  - Updated test expectations to use "dicomics" naming
+  - Changed home component splash text
+- **Reader Component**: 
+  - Refactored `goToPage()` method signature for clarity
+  - Improved method naming consistency with `goToPageSec()`
+
+### Fixed
+- **Code Quality**: 
+  - Removed extra blank line in home component upload section
+  - Improved variable naming in reader component image URL handling
+
+### Improved
+- **Build Process**: Enhanced electron-builder configuration with proper asset paths
+- **Developer Experience**: Better separation of concerns in reader component navigation methods
+- **Indexing Service**: More reliable event emission for quick scan operations
+
+---
+
+## [0.0.0] - Initial Release
+
+### Initial Features
+- Angular-based desktop application for reading digital comics
+- Support for CBZ and CBR archive formats
+- Comic library management with indexing
+- Reading progress tracking
+- Bookmark functionality
+- Local storage of comic metadata
+- Electron desktop integration
+- Settings management
+
+---
+
+## Future Enhancements
+
+### Planned Features
+- [ ] Advanced search and filtering enhancements
+- [ ] Tag and category organization system
+- [ ] Comic series recognition and grouping
+- [ ] Cloud synchronization capabilities
+- [ ] Mobile companion app
+- [ ] Performance optimizations for large libraries
+- [ ] Custom themes and UI customization
+- [ ] Batch operations for library management
+- [ ] Reading recommendations based on history
+- [ ] Comic metadata fetching from online sources
+- [ ] User authentication and cloud backup
+- [ ] Advanced statistics and reading analytics
+
+---
 
 ### Added
 - **Project Branding**: Official rebranding from "bdhq-reader" to "DiComics"

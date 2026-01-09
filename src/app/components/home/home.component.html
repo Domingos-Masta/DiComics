@@ -3,15 +3,8 @@
   <header class="app-header glass-effect">
     <div class="header-left">
       <div class="logo">
-        <svg class="logo-icon" viewBox="0 0 24 24" fill="none"
-          xmlns="http://www.w3.org/2000/svg">
-          <path
-            d="M3 18V6C3 4.34315 4.34315 3 6 3H18C19.6569 3 21 4.34315 21 6V18C21 19.6569 19.6569 21 18 21H6C4.34315 21 3 19.6569 3 18Z"
-            stroke="currentColor" stroke-width="2" />
-          <path d="M8 9H16M8 13H16M8 17H12" stroke="currentColor"
-            stroke-width="2" stroke-linecap="round" />
-        </svg>
-        <span class="logo-text">BD HQ Reader</span>
+        <img class="logo-icon" src="assets/img/icon-trsp.png" alt="DIComics">
+        <span class="logo-text">DIComics</span>
       </div>
     </div>
 
@@ -97,9 +90,25 @@
             d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
         </svg>
       </button>
+      <!-- Settings button -->
+      <button class="settings-btn" (click)="router.navigate(['/settings'])"
+        title="Settings">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="8 3 3 3 3 8"></polyline>
+          <polyline points="16 3 21 3 21 8"></polyline>
+          <polyline points="8 21 3 21 3 16"></polyline>
+          <polyline points="16 21 21 21 21 16"></polyline>
+          <path
+            d="M8.5 10a3.5 3.5 0 0 0-5 2.5V17a3 3 0 0 1 3-3h7v-4h-1a3.5 3.5 0 0 0-3.5-3.5V10z"></path>
+          <path
+            d="M15.5 10a3.5 3.5 0 0 1 5 2.5V17a3 3 0 0 0-3-3h-7v-4h1a3.5 3.5 0 0 1 3.5-3.5V10z"></path>
+        </svg>
+      </button>
 
       <div class="user-menu">
-        <button class="user-btn" (click)="openAboutDialog()"
+        <button class="user-btn" (click)="openOnChangeAboutDialog()"
           title="About & Settings">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
             viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -181,11 +190,11 @@
     </div>
 
     <!-- Comics Grid -->
-    <!-- Comics Grid -->
     @if (filteredComics.length > 0) {
     <div class="comics-grid">
       @for (comic of filteredComics; track comic.id) {
-      <div class="comic-card scale-in" (click)="openComic(comic)">
+      <div class="comic-card scale-in" (click)="openComic(comic)"
+        (contextmenu)="openContextMenu($event, comic)">
         <!-- Cover Image or Placeholder -->
         <div class="comic-cover">
           @if (hasCover(comic)) {
@@ -258,6 +267,16 @@
                   d="M19 7L18.1327 19.1425C18.0579 20.1891 17.187 21 16.1378 21H7.86224C6.81296 21 5.94208 20.1891 5.86732 19.1425L5 7M10 11V17M14 11V17M15 7V4C15 3.44772 14.5523 3 14 3H10C9.44772 3 9 3.44772 9 4V7M4 7H20"
                   stroke-width="2" stroke-linecap="round"
                   stroke-linejoin="round" />
+              </svg>
+            </button>
+            <!-- Add context menu trigger button -->
+            <button class="cover-action-btn"
+              (click)="openContextMenu($event, comic)"
+              title="More options">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="6" r="1" stroke-width="2" />
+                <circle cx="12" cy="12" r="1" stroke-width="2" />
+                <circle cx="12" cy="18" r="1" stroke-width="2" />
               </svg>
             </button>
           </div>
@@ -403,52 +422,10 @@
     </div>
     }
   </main>
-
-  <!-- About Dialog (Hidden by default, triggered by user menu) -->
-  <div class="about-dialog" id="aboutDialog" style="display: none;">
-    <div class="about-content">
-      <div class="about-header">
-        <h2>About ComicFlow</h2>
-        <button class="close-btn"
-          onclick="document.getElementById('aboutDialog').style.display='none'">
-          &times;
-        </button>
-      </div>
-      <div class="about-body">
-        <div class="about-logo">
-          <div class="logo-large">
-            <svg viewBox="0 0 24 24" fill="none"
-              xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M3 18V6C3 4.34315 4.34315 3 6 3H18C19.6569 3 21 4.34315 21 6V18C21 19.6569 19.6569 21 18 21H6C4.34315 21 3 19.6569 3 18Z"
-                stroke="currentColor" stroke-width="2" />
-              <path d="M8 9H16M8 13H16M8 17H12" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" />
-            </svg>
-          </div>
-        </div>
-        <p class="about-version">Version 1.0.0</p>
-        <p class="about-description">
-          ComicFlow is a modern CBZ reader built with Angular and Electron.
-          Enjoy reading your digital comics with a beautiful, intuitive
-          interface.
-        </p>
-        <div class="about-features">
-          <h3>Features</h3>
-          <ul>
-            <li>📚 Read CBZ/ZIP comic files</li>
-            <li>🔖 Bookmark your favorite pages</li>
-            <li>📊 Track reading progress</li>
-            <li>🎨 Beautiful gradient covers</li>
-            <li>⚡ Fast and responsive</li>
-          </ul>
-        </div>
-        <div class="about-footer">
-          <p>Built with ❤️ using Angular & Electron</p>
-        </div>
-      </div>
-    </div>
-  </div>
+<!-- About dialog -->
+  @if (aboutDialogOpen) {
+    <app-about (aboutDialogOpenChange)="openOnChangeAboutDialog($event)" ></app-about>
+  }
   <!-- Add indexing progress overlay -->
   @if (indexing) {
   <div class="indexing-overlay">
@@ -484,6 +461,95 @@
     <div class="toast-content">
       <span class="toast-message">{{ toastMessage }}</span>
       <button class="toast-close" (click)="showToast = false">×</button>
+    </div>
+  </div>
+  }
+
+  <!-- Add this near the end of the template, before closing div -->
+  @if (contextMenu.comic) {
+  <div class="context-menu-overlay" (click)="closeContextMenu()"></div>
+  <div class="context-menu"
+    [style.left.px]="contextMenu.x"
+    [style.top.px]="contextMenu.y">
+    <div class="context-menu-header">
+      <h4>{{ contextMenu.comic.title }}</h4>
+    </div>
+    <div class="context-menu-items">
+      <button class="context-menu-item"
+        (click)="openComicDetails(contextMenu.comic)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            stroke-width="2" />
+        </svg>
+        <span>Comic Details</span>
+      </button>
+
+      <button class="context-menu-item" (click)="openComic(contextMenu.comic)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"
+            stroke-linecap="round" />
+        </svg>
+        <span>Read Now</span>
+      </button>
+
+      <button class="context-menu-item"
+        (click)="quickEditMetadata(contextMenu.comic)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path
+            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+            stroke-width="2" />
+        </svg>
+        <span>Edit Metadata</span>
+      </button>
+
+      <button class="context-menu-item"
+        (click)="setReadingMode(contextMenu.comic)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path
+            d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+            stroke-width="2" />
+        </svg>
+        <span>Reading Mode</span>
+      </button>
+
+      <div class="context-menu-divider"></div>
+
+      <button class="context-menu-item"
+        (click)="markAsRead(contextMenu.comic, $event)">
+        @if (contextMenu.comic.isRead) {
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+        </svg>
+        <span>Mark as Unread</span>
+        } @else {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M20 6L9 17L4 12" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        <span>Mark as Read</span>
+        }
+      </button>
+
+      <button class="context-menu-item"
+        (click)="openComicFolder(contextMenu.comic, $event)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path
+            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+            stroke-width="2" />
+        </svg>
+        <span>Open Folder</span>
+      </button>
+
+      <div class="context-menu-divider"></div>
+
+      <button class="context-menu-item delete"
+        (click)="deleteComic(contextMenu.comic, $event)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path
+            d="M19 7l-.867 12.142C18.058 20.189 17.187 21 16.138 21H7.862c-1.05 0-1.92-.811-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4c0-.552-.448-1-1-1h-4c-.552 0-1 .448-1 1v3M4 7h16"
+            stroke-width="2" stroke-linecap="round" />
+        </svg>
+        <span>Delete Comic</span>
+      </button>
     </div>
   </div>
   }

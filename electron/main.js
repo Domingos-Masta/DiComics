@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const fsasync = require('fs').promises;
@@ -9,6 +9,10 @@ const { XMLParser } = require("fast-xml-parser");
 const { log } = require('console');
 
 let mainWindow;
+// Handle the file paths globally
+let filesToOpen = [];
+const isMac = process.platform === 'darwin'
+
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -17,32 +21,35 @@ function createWindow() {
         minWidth: 800,
         minHeight: 600,
         frame: true,
-        titleBarStyle: 'hiddenInset', // For macOS
+        title: 'DiComics',
+        // titleBarStyle: 'hiddenInset', // For macOSrm 
+        titleBarStyle: 'hidden',
         backgroundColor: '#0f172a',
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
             preload: path.join(__dirname, 'preload.js')
         },
-        icon: path.join(__dirname, 'assets/icon') // Add your icon
+        icon: path.join(__dirname, 'src/icon.ico'),
     });
 
     // Custom menu
     const template = [
-        {
-            label: 'ComicFlow',
-            submenu: [
-                { role: 'about' },
-                { type: 'separator' },
-                { role: 'services' },
-                { type: 'separator' },
-                { role: 'hide' },
-                { role: 'hideOthers' },
-                { role: 'unhide' },
-                { type: 'separator' },
-                { role: 'quit' }
-            ]
-        },
+        ...(isMac ?
+            [{
+                label: app.name,
+                submenu: [
+                    { role: 'about' },
+                    { type: 'separator' },
+                    { role: 'services' },
+                    { type: 'separator' },
+                    { role: 'hide' },
+                    { role: 'hideOthers' },
+                    { role: 'unhide' },
+                    { type: 'separator' },
+                    { role: 'quit' }
+                ]
+            }] : []),
         {
             label: 'File',
             submenu: [
@@ -77,6 +84,17 @@ function createWindow() {
                 { type: 'separator' },
                 { role: 'front' }
             ]
+        },
+        {
+            role: 'help',
+            submenu: [
+                {
+                    label: 'About DiComics',
+                    click() {
+                        mainWindow.webContents.send('on-about-click');
+                    }
+                }
+            ]
         }
     ];
 
@@ -88,16 +106,54 @@ function createWindow() {
     }
 
     // Load app
-    mainWindow.loadURL('http://localhost:4200');
     // Open DevTools in development
-    if (process.env.NODE_ENV === 'development') {
+    // if (process.env.NODE_ENV === 'development') {
+    if (process.env.npm_lifecycle_event === 'electron-dev') {
+        mainWindow.loadURL('http://localhost:4200');
         mainWindow.webContents.openDevTools();
+    } else {
+        mainWindow.loadFile(path.join(__dirname, './../dist/dicomics/browser/index.html'));
     }
-    mainWindow.webContents.openDevTools();
+
+    // Once the window is ready, process any pending files
+    mainWindow.webContents.on('did-finish-load', () => {
+        while (filesToOpen.length > 0) {
+            mainWindow.webContents.send('open-file', filesToOpen.shift());
+        }
+    });
+
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+    });
+}
+
+// Function to process the file paths
+function handleFileOpen(filePath) {
+    if (mainWindow) {
+        // If the window is ready, send the file path to the renderer process via IPC
+        mainWindow.webContents.send('open-file', filePath);
+    } else {
+        // If the window is not yet created, store the path to be processed later
+        filesToOpen.push(filePath);
+    }
+}
+
+// Windows/Linux: Parse process.argv
+if (process.platform === 'win32' || process.platform === 'linux') {
+    const fileArg = process.argv[1]; // The second argument is often the file path
+    if (fileArg && fileArg !== '.') { // Check if a path was passed
+        handleFileOpen(fileArg);
+    }
 }
 
 // App lifecycle
 app.whenReady().then(createWindow);
+
+// macOS: 'open-file' event
+app.on('open-file', (event, filePath) => {
+    event.preventDefault(); // Prevent default OS handling
+    handleFileOpen(filePath);
+});
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
@@ -111,6 +167,30 @@ app.on('activate', () => {
     }
 });
 
+ipcMain.handle('get-app-version', async () => {
+    return app.getVersion();
+});
+
+ipcMain.handle('open-folder', async (event, targetPath) => {
+    try {
+        const stats = fs.statSync(targetPath);
+
+        if (stats.isDirectory()) {
+            // Open folder
+            await shell.openPath(targetPath);
+        } else if (stats.isFile()) {
+            // Open containing folder and select file
+            shell.showItemInFolder(targetPath);
+        } else {
+            throw new Error('Not a file or folder');
+        }
+
+        return { success: true };
+    } catch (err) {
+        console.error('Failed to open path:', err.message);
+        return { success: false, message: err.message };
+    }
+});
 
 ipcMain.handle('read-bdhq', async (event, filePath) => {
     return await readComicFile(filePath);
@@ -726,6 +806,7 @@ async function extractComicCover(filePath) {
             console.debug(`- Pages: ${result.pages.length}`);
             console.debug(`- Type: ${result.type}`);
             console.debug(`- Method: ${result.method}`);
+            console.debug(`- Metadata: ${result.metadata}`);
 
             return {
                 success: true,
@@ -734,7 +815,8 @@ async function extractComicCover(filePath) {
                 fileName: firstPage.name,
                 totalPages: result.pages.length,
                 type: result.type,
-                method: result.method
+                method: result.method,
+                metadata: result.metadata
             };
         }
 

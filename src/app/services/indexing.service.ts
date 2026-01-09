@@ -244,6 +244,7 @@ export class IndexingService {
                     totalPages: 0,
                     currentPage: 0,
                     readPages: [],
+                    fileName: this.getFileName(filePath),
                     bookmarks: [],
                     isRead: false,
                     lastRead: new Date(),
@@ -271,6 +272,7 @@ export class IndexingService {
             let coverImageUrl = null;
             let totalPages = 0;
             let fileType = ext;
+            let metadata = null;
 
             try {
                 console.log(`Extracting cover...`);
@@ -278,7 +280,8 @@ export class IndexingService {
                 console.log(`Cover extraction:`, {
                     success: !!coverData.cover,
                     type: coverData.type,
-                    pages: coverData.totalPages
+                    pages: coverData.totalPages,
+                    metadata: coverData.metadata
                 });
 
                 if (coverData.cover && coverData.mimeType) {
@@ -310,6 +313,7 @@ export class IndexingService {
             const comic: Comic = {
                 id: this.generateId(),
                 title: this.cleanTitle(fileInfo.name),
+                fileName: fileInfo.name,
                 filePath: filePath,
                 coverImage: coverData?.cover || undefined,
                 coverImageUrl: coverImageUrl || undefined,
@@ -321,7 +325,8 @@ export class IndexingService {
                 lastRead: new Date(),
                 addedDate: new Date(),
                 fileSize: fileInfo.size,
-                hasCover: hasCover
+                hasCover: hasCover,
+                metadata: metadata || undefined
             };
 
             console.log(`Created comic:`, {
@@ -343,6 +348,7 @@ export class IndexingService {
             const basicComic: Comic = {
                 id: this.generateId(),
                 title: this.getFileName(filePath).replace(/\.[^/.]+$/, ""),
+                fileName: this.getFileName(filePath),
                 filePath: filePath,
                 totalPages: 0,
                 currentPage: 0,

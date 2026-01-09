@@ -1,0 +1,417 @@
+ <div class="comic-details-container">
+    <!-- Header -->
+    <header class="details-header">
+        <button class="back-btn" (click)="goBack()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M19 12H5M12 19l-7-7 7-7" stroke-width="2"
+                    stroke-linecap="round" />
+            </svg>
+            Back to Library
+        </button>
+        <h1 class="comic-title">{{ comic?.title }}</h1>
+        <div class="header-actions">
+            <button class="action-btn primary" (click)="openReader()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"
+                        stroke-linecap="round" />
+                </svg>
+                Read Now
+            </button>
+        </div>
+    </header>
+
+    <div class="details-content">
+        <!-- Left Column: Cover & Quick Actions -->
+        <div class="left-column">
+            <!-- Cover -->
+            <div class="cover-section">
+                @if (coverUrl) {
+                <img [src]="coverUrl" alt="Cover" class="comic-cover-large"
+                    (error)="onCoverError()">
+                } @else {
+                <div class="cover-placeholder-large"
+                    [class]="coverPlaceholderClass">
+                    <span class="cover-initials">{{ coverInitials }}</span>
+                </div>
+                }
+
+                <!-- Quick Stats -->
+                <div class="quick-stats">
+                    <div class="stat">
+                        <span class="stat-label">Pages</span>
+                        <span class="stat-value">{{ comic?.totalPages }}</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Size</span>
+                        <span class="stat-value">{{ comic!.fileSize | fileSize
+                            }}</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Status</span>
+                        <span class="stat-value">
+                            @if (comic?.isRead) {
+                            <span class="badge success">Read</span>
+                            } @else if (comic!.currentPage > 0) {
+                            <span class="badge warning">In Progress</span>
+                            } @else {
+                            <span class="badge">Unread</span>
+                            }
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Reading Mode Selector -->
+                <div class="section-card">
+                    <h3>Reading Mode</h3>
+                    <div class="reading-modes">
+                        @for (mode of readingModes; track mode.id) {
+                        <button class="mode-btn"
+                            [class.active]="selectedReadingMode === mode.id"
+                            (click)="selectReadingMode(mode.id)"
+                            [title]="mode.description">
+                            <svg [innerHTML]="mode.icon"
+                                class="mode-icon"></svg>
+                            <span>{{ mode.name }}</span>
+                        </button>
+                        }
+                    </div>
+                </div>
+
+                <!-- Background Music -->
+                <div class="section-card">
+                    <div class="music-header">
+                        <h3>Background Music</h3>
+                        <button class="music-toggle" (click)="toggleMusic()">
+                            @if (musicEnabled) {
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M19 11a7 7 0 01-7 7M9 22h6M12 2v3M5 12H2M22 12h-3M19 5l-2 2M19 19l-2-2M5 19l2-2M5 5l2 2" />
+                            </svg>
+                            } @else {
+                            <svg viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor">
+                                <path
+                                    d="M19 11a7 7 0 01-7 7M9 22h6M12 2v3M5 12H2M22 12h-3M19 5l-2 2M19 19l-2-2M5 19l2-2M5 5l2 2"
+                                    stroke-width="2" />
+                            </svg>
+                            }
+                        </button>
+                    </div>
+
+                    @if (musicEnabled) {
+                    <div class="music-genres">
+                        @for (genre of musicGenres; track genre.id) {
+                        <button class="genre-btn"
+                            [class.active]="selectedGenre === genre.id"
+                            (click)="selectGenre(genre.id)">
+                            <span class="genre-emoji">{{ genre.emoji }}</span>
+                            <span>{{ genre.name }}</span>
+                        </button>
+                        }
+                    </div>
+
+                    <!-- Music Player -->
+                    <div class="music-player">
+                        <div class="player-controls">
+                            <button class="player-btn"
+                                (click)="previousTrack()">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M6 6v12M17 12L7 18V6l10 6z" />
+                                </svg>
+                            </button>
+                            <button class="player-btn play"
+                                (click)="togglePlayback()">
+                                @if (isPlaying) {
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M6 4h4v16H6zm8 0h4v16h-4z" />
+                                </svg>
+                                } @else {
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M8 5v14l11-7z" />
+                                </svg>
+                                }
+                            </button>
+                            <button class="player-btn" (click)="nextTrack()">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M6 18l10-6L6 6v12zM18 6v12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="volume-control">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M11 5L6 9H2v6h4l5 4V5z" />
+                            </svg>
+                            <input type="range"
+                                [(ngModel)]="volume"
+                                min="0"
+                                max="100"
+                                class="volume-slider"
+                                (input)="updateVolume()">
+                            <span class="volume-percent">{{ volume }}%</span>
+                        </div>
+
+                        <div class="current-track">
+                            <span class="track-title">{{ currentTrack?.title ||
+                                'No track playing' }}</span>
+                            @if (currentTrack) {
+                            <span class="track-artist">{{ currentTrack.artist
+                                }}</span>
+                            }
+                        </div>
+                    </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Metadata & Details -->
+        <div class="right-column">
+            <!-- Metadata Editor -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h2>Comic Metadata</h2>
+                    <button class="action-btn small" (click)="saveMetadata()">
+                        Save Changes
+                    </button>
+                </div>
+
+                <form class="metadata-form" (ngSubmit)="saveMetadata()">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Series</label>
+                            <input type="text"
+                                [(ngModel)]="editableMetadata.series"
+                                name="series"
+                                placeholder="e.g., Batman">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Issue #</label>
+                            <input type="text"
+                                [(ngModel)]="editableMetadata.issueNumber"
+                                name="issueNumber"
+                                placeholder="e.g., #1">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Volume</label>
+                            <input type="text"
+                                [(ngModel)]="editableMetadata.volume"
+                                name="volume"
+                                placeholder="e.g., Volume 1">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Publisher</label>
+                            <input type="text"
+                                [(ngModel)]="editableMetadata.publisher"
+                                name="publisher"
+                                placeholder="e.g., DC Comics">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Year</label>
+                            <input type="number"
+                                [(ngModel)]="editableMetadata.year"
+                                name="year"
+                                placeholder="2024"
+                                min="1900"
+                                max="2100">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Month</label>
+                            <select [(ngModel)]="editableMetadata.month"
+                                name="month">
+                                <option value>Select month</option>
+                                @for (month of months; track month.value) {
+                                <option [value]="month.value">{{ month.name
+                                    }}</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Writer</label>
+                            <input type="text"
+                                [(ngModel)]="editableMetadata.writer"
+                                name="writer"
+                                placeholder="Writer name">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Artist</label>
+                            <input type="text"
+                                [(ngModel)]="editableMetadata.penciller"
+                                name="artist"
+                                placeholder="Artist name">
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label>Summary</label>
+                            <textarea [(ngModel)]="editableMetadata.summary"
+                                name="summary"
+                                rows="4"
+                                placeholder="Comic summary..."></textarea>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label>Genres</label>
+                            <div class="tags-input">
+                                @for (tag of editableMetadata.genres; track tag;
+                                let i = $index) {
+                                <span class="tag">
+                                    {{ tag }}
+                                    <button type="button" class="tag-remove"
+                                        (click)="removeGenre(i)">
+                                        ×
+                                    </button>
+                                </span>
+                                }
+                                <input type="text"
+                                    #genreInput
+                                    placeholder="Add genre (press Enter)"
+                                    (keydown.enter)="addGenre($event, genreInput)">
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label>Tags</label>
+                            <div class="tags-input">
+                                @for (tag of editableMetadata.tags; track tag;
+                                let i = $index) {
+                                <span class="tag">
+                                    {{ tag }}
+                                    <button type="button" class="tag-remove"
+                                        (click)="removeTag(i)">
+                                        ×
+                                    </button>
+                                </span>
+                                }
+                                <input type="text"
+                                    #tagInput
+                                    placeholder="Add tag (press Enter)"
+                                    (keydown.enter)="addTag($event, tagInput)">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Rating</label>
+                            <div class="rating">
+                                @for (star of [1,2,3,4,5]; track star) {
+                                <button type="button"
+                                    class="star-btn"
+                                    [class.active]="editableMetadata.rating! >= star"
+                                    (click)="setRating(star)">
+                                    ★
+                                </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- File Details -->
+            <div class="section-card">
+                <h3>File Information</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">File Name</span>
+                        <span class="info-value">{{ comic?.fileName }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">File Path</span>
+                        <span class="info-value file-path"
+                            [title]="comic?.filePath">
+                            {{ comic?.filePath }}
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Added Date</span>
+                        <span class="info-value">{{ comic?.addedDate |
+                            date:'medium' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Last Read</span>
+                        <span class="info-value">
+                            {{ comic?.lastRead ? (comic?.lastRead |
+                            date:'medium') : 'Never' }}
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Read Time</span>
+                        <span class="info-value">
+                            {{ comic?.readTime ? comic!.readTime + ' minutes' :
+                            'Not tracked' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress & Bookmarks -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>Reading Progress</h3>
+                    <button class="action-btn small" (click)="resetProgress()">
+                        Reset
+                    </button>
+                </div>
+
+                <div class="progress-section">
+                    <div class="progress-bar-large">
+                        <div class="progress-fill"
+                            [style.width.%]="progressPercent"></div>
+                    </div>
+                    <div class="progress-info">
+                        <span>{{ comic?.currentPage || 0 }} / {{
+                            comic?.totalPages }} pages</span>
+                        <span>{{ progressPercent | number:'1.0-0' }}%</span>
+                    </div>
+
+                    <div class="page-jump">
+                        <label>Jump to page:</label>
+                        <input type="number"
+                            #pageInput
+                            [min]="1"
+                            [max]="comic?.totalPages"
+                            placeholder="Page number">
+                        <button class="action-btn small"
+                            (click)="jumpToPage(pageInput.value)">
+                            Go
+                        </button>
+                    </div>
+                </div>
+
+                @if (comic!.bookmarks.length > 0) {
+                <div class="bookmarks-section">
+                    <h4>Bookmarks ({{ comic!.bookmarks.length }})</h4>
+                    <div class="bookmarks-grid">
+                        @for (bookmark of comic!.bookmarks; track bookmark.pageNumber) {
+                        <div class="bookmark-card">
+                            <div class="bookmark-info">
+                                <span class="bookmark-page">Page {{
+                                    bookmark.pageNumber }}</span>
+                                <span class="bookmark-date">{{
+                                    bookmark.createdAt | date:'short' }}</span>
+                            </div>
+                            <div class="bookmark-actions">
+                                <button class="action-btn tiny"
+                                    (click)="jumpToPage(bookmark.pageNumber)">
+                                    Jump
+                                </button>
+                                <button class="action-btn tiny danger"
+                                    (click)="removeBookmark(bookmark.pageNumber)">
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                        }
+                    </div>
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

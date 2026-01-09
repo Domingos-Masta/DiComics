@@ -1,5 +1,5 @@
 import { Injectable, NgZone } from '@angular/core';
-import { Comic, ComicPage, CoverPlaceholder } from '../models/comic.model';
+import { Comic, ComicInfo, ComicPage, CoverPlaceholder } from '../models/comic.model';
 
 // Define Electron API interface
 interface ElectronAPI {
@@ -20,6 +20,7 @@ interface ElectronAPI {
     checkComicFile: (filePath: string) => Promise<any>;
     getSystemInfo: () => Promise<any>;
     testRarExtraction: (filePath: string) => Promise<any>;
+    openFolder: (folderPath: string) => Promise<any>;
 }
 
 declare global {
@@ -73,6 +74,16 @@ export class CbzService {
         }
     }
 
+    public async openFolder(path: string): Promise<void> {
+        if (this.electronAPI?.openFolder) {
+            try {
+                await this.electronAPI.openFolder(path);
+            } catch (error) {
+                console.error('Failed to open folder:', error);
+            }
+        }
+
+    }
 
     // Check if Electron API is available
     isAvailable(): boolean {
@@ -134,7 +145,7 @@ export class CbzService {
         return this.browserSelectFiles();
     }
 
-    async readBDHQ(filePath: string): Promise<{ pages: ComicPage[], totalPages: number, type?: string }> {
+    async readBDHQ(filePath: string): Promise<{ pages: ComicPage[], totalPages: number, type?: string, metadata: ComicInfo }> {
         await this.waitForElectronAPI();
 
         if (this.electronAPI?.readBDHQ) {
@@ -162,7 +173,8 @@ export class CbzService {
                     success: result.success,
                     type: result.type,
                     pages: result.pages?.length,
-                    error: result.error
+                    error: result.error,
+                    metadata: result.metadata
                 });
 
                 if (result.success) {
@@ -172,10 +184,11 @@ export class CbzService {
                             data: page.data,
                             name: page.name,
                             type: page.type,
-                            mimeType: this.getMimeType(page.type)
+                            mimeType: this.getMimeType(page.type),
                         })),
                         totalPages: result.totalPages,
-                        type: result.type
+                        type: result.type,
+                        metadata: result.metadata
                     };
                 } else {
                     const errorMessage = result.error || 'Failed to read comic file';
@@ -254,6 +267,7 @@ export class CbzService {
         fileName?: string,
         totalPages?: number,
         type?: string,
+        metadata?: any,
         error?: string
     }> {
         await this.waitForElectronAPI();
@@ -266,6 +280,7 @@ export class CbzService {
                     success: result.success,
                     type: result.type,
                     pages: result.totalPages,
+                    metadata: result.metadata,
                     error: result.error
                 });
 
@@ -275,6 +290,7 @@ export class CbzService {
                         mimeType: result.mimeType,
                         fileName: result.fileName,
                         totalPages: result.totalPages,
+                        metadata: result.metadata,
                         type: result.type
                     };
                 } else {
@@ -296,6 +312,7 @@ export class CbzService {
                                 mimeType: firstPage.mimeType || this.getMimeType(firstPage.type),
                                 fileName: firstPage.name,
                                 totalPages: fullResult.pages.length,
+                                metadata: fullResult.metadata,
                                 type: fullResult.type
                             };
                         }

@@ -166,7 +166,7 @@
                       @if (isPageRead(i)) {
                         <span class="read-indicator">✓</span>
                       }
-                      @if (comic?.bookmarks!.includes(i)) {
+                      @if (hasBookmark(comic!, i)) {
                         <span class="bookmark-indicator">🔖</span>
                       }
                     </div>
@@ -182,17 +182,17 @@
           <div class="bookmarks-panel">
             <div class="bookmarks-list">
               @for (bookmark of comic?.bookmarks; track bookmark) {
-                <button class="bookmark-item" (click)="goToBookmark(bookmark)">
+                <button class="bookmark-item" (click)="goToBookmark(bookmark.pageNumber)">
                   <div class="bookmark-preview">
-                    @if (pages[bookmark]) {
-                      <img [src]="getImageUrl(pages[bookmark])" 
-                           [alt]="'Page ' + (bookmark + 1)"
+                    @if (pages[bookmark.pageNumber]) {
+                      <img [src]="getImageUrl(pages[bookmark.pageNumber])" 
+                           [alt]="'Page ' + (bookmark.pageNumber + 1)"
                            loading="lazy">
                     }
                   </div>
                   <div class="bookmark-info">
-                    <span class="bookmark-page">Page {{ bookmark + 1 }}</span>
-                    <span class="bookmark-title">{{ pages[bookmark]?.name || 'Page ' + (bookmark + 1) }}</span>
+                    <span class="bookmark-page">Page {{ bookmark.pageNumber + 1 }}</span>
+                    <span class="bookmark-title">{{ pages[bookmark.pageNumber]?.name || 'Page ' + (bookmark.pageNumber + 1) }}</span>
                   </div>
                   <button class="bookmark-remove" 
                           (click)="toggleBookmark(); $event.stopPropagation()"

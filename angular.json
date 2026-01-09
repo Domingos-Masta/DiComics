@@ -35,7 +35,7 @@
               },
               {
                 "glob": "icon.png",
-                "input": "electron/assets",
+                "input": "electron/build",
                 "output": "/"
               }
             ],

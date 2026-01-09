@@ -1,0 +1,57 @@
+<!-- About Dialog (Hidden by default, triggered by user menu) -->
+<div class="about-dialog" id="aboutDialog" style="display: flex;">
+    <div class="about-content">
+        <div class="about-header">
+            <h2>About</h2>
+            <button class="close-btn" (click)="closeAboutDialog()">
+                &times;
+            </button>
+        </div>
+        <div class="about-body">
+            <div class="about-logo">
+                <div class="logo-large">
+                    <img class="logo-icon" src="assets/img/icon-trsp.png"
+                        alt="DIComics">
+                </div>
+            </div>
+            <!-- App Name -->
+            <div style="text-align: center;">
+                <h1 class="app-title">
+                <span class="gradient-text">DIComics</span>
+            </h1>
+            </div>
+            <p class="about-version">Version {{this.appVersion}}</p>
+            <p class="about-description">
+                DIComics is a modern CBZ, CBR, RAR and ZIP HQ, BD, Manga Comincs
+                reader built with Love and
+                Passion.
+                Enjoy reading your digital comics with a beautiful, intuitive,
+                user-friendly and imersive
+                interface and environment.
+            </p>
+            <div class="about-features">
+                <h3>Features</h3>
+                <ul>
+                    <li>📚 Read CBZ/CBR/RAR/ZIP comic files</li>
+                    <li>🔖 Bookmark your favorite pages</li>
+                    <li>📊 Track reading progress</li>
+                    <li>🎨 Beautiful gradient covers</li>
+                    <li>⚡ Fast and responsive</li>
+                    <li>🎭 Immersive reading environment</li>
+                    <li>🔊 Background sound effects</li>
+                    <li>📚 Smart comic management</li>
+                </ul>
+            </div>
+            <div class="about-footer">
+                <p>Built with ❤️ using The most modern technologies</p>
+                <div class="about-copyright">
+                    <span>&copy; 2026 Domingos Fernando. All rights reserved.</span>
+                    <br>
+                    <span>DIComics is released under the GNU General Public License v3.0 (GPLv3)</span>
+                    <br>
+                    <span>For more information, visit <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GNU GPLv3 License</a></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

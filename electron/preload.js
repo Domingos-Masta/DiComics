@@ -6,6 +6,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     extractCover: (filePath) => ipcRenderer.invoke('extract-cover', filePath),
     getFileInfo: (filePath) => ipcRenderer.invoke('get-file-info', filePath),
 
+    openFolder: (folderPath) => ipcRenderer.invoke('open-folder', folderPath),
+
     // New directory scanning APIs
     selectDirectory: () => ipcRenderer.invoke('select-directory'),
     scanDirectory: (dirPath, options) => ipcRenderer.invoke('scan-directory', dirPath, options),
@@ -25,5 +27,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Enhanced APIs
     checkComicFile: (filePath) => ipcRenderer.invoke('check-comic-file', filePath),
     getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
-    testRarExtraction: (filePath) => ipcRenderer.invoke('test-rar-extraction', filePath)
+    testRarExtraction: (filePath) => ipcRenderer.invoke('test-rar-extraction', filePath),
+
+    onOpenAboutModal: (callback) => ipcRenderer.on('on-about-click', callback),
+    getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+    handleFileOpen: (callback) => ipcRenderer.on('open-file', (event, ...args) => callback(...args))
 });

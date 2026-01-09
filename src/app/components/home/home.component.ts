@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, NgZone } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -8,12 +8,15 @@ import { IndexingService } from '../../services/indexing.service';
 import { SettingsService } from '../../services/settings.service';
 import { Comic, CoverPlaceholder } from '../../models/comic.model';
 import { FileSizePipe } from '../../pipes/file-size-pipe';
+import { AboutComponent } from '../about/about.component';
 
+// Helper function to access electron in a type-safe way if using contextIsolation
+const ipcRenderer = (window as any).ipcRenderer;
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, FormsModule, FileSizePipe],
+  imports: [CommonModule, FormsModule, FileSizePipe, AboutComponent],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss']
 })
@@ -22,9 +25,16 @@ export class HomeComponent implements OnInit, OnDestroy {
   filteredComics: Comic[] = [];
   loading = false;
   indexing = false;
+  aboutDialogOpen = false;
   searchQuery = '';
   sortBy: 'name' | 'date' | 'progress' = 'date';
   filterBy: 'all' | 'reading' | 'unread' | 'completed' = 'all';
+  contextMenu = {
+    comic: null as any,
+    x: 0,
+    y: 0,
+    visible: false
+  };
 
   // Indexing progress
   indexingProgress = {
@@ -45,6 +55,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   toastType: 'success' | 'error' | 'info' = 'info';
 
   constructor(
+    private ngZone: NgZone,
     private cbzService: CbzService,
     private storageService: StorageService,
     private indexingService: IndexingService,
@@ -69,6 +80,34 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.performQuickScan();
     } else {
       console.log('Quick scan skipped - either disabled or Electron API not available');
+    }
+
+    if ((window as any).electronAPI) {
+      (window as any).electronAPI.onOpenAboutModal(() => {
+        this.ngZone.run(() => {
+          this.openOnChangeAboutDialog();
+        });
+      });
+      (window as any).electronAPI.handleFileOpen(async (filePath: string) => {
+        this.ngZone.run(async () => {
+          if (filePath) {
+            console.log('Received file to open:', filePath);
+            try {
+              const comic = await this.indexingService.indexFile(filePath);
+              if (comic) {
+                this.generatePlaceholder(comic);
+                this.loadComics();
+                this.showNotification(`Added "${comic.title}" to library`, 'success');
+              } else {
+                this.showNotification('File is already in your library.', 'info');
+              }
+            } catch (error) {
+              console.error('Error indexing file from open-file event:', error);
+              this.showNotification('Error adding file to library. Please try again.', 'error');
+            }
+          }
+        });
+      });
     }
   }
 
@@ -336,11 +375,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
   }
 
-  openAboutDialog(): void {
-    const dialog = document.getElementById('aboutDialog');
-    if (dialog) {
-      dialog.style.display = 'flex';
-    }
+  openOnChangeAboutDialog(status = true): void {
+    this.aboutDialogOpen = status;
   }
 
   // Add cancelIndexing method
@@ -350,4 +386,43 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.indexing = false;
     this.showNotification('Indexing cancelled', 'info');
   }
+
+  // Additional methods for context menu actions
+  openContextMenu(event: MouseEvent, comic: any) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    this.contextMenu.comic = comic;
+    this.contextMenu.x = event.clientX;
+    this.contextMenu.y = event.clientY;
+    this.contextMenu.visible = true;
+  }
+
+  openComicFolder(comic: Comic, event: Event) {
+    event.stopPropagation();
+    this.closeContextMenu();
+    const filePath = comic.filePath.replace(comic.fileName, '');
+    this.cbzService.openFolder(filePath);
+  }
+
+  closeContextMenu() {
+    this.contextMenu.comic = null;
+    this.contextMenu.visible = false;
+  }
+
+  openComicDetails(comic: any) {
+    this.closeContextMenu();
+    this.router.navigate(['/comic', comic.id]);
+  }
+
+  quickEditMetadata(comic: any) {
+    this.closeContextMenu();
+    // Open quick edit modal or navigate
+  }
+
+  setReadingMode(comic: any) {
+    this.closeContextMenu();
+    // Open reading mode selector
+  }
+
 }

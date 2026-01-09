@@ -6,7 +6,7 @@
     "email": "domingos.m.fernando@gmail.com",
     "url": "https://github.com/Domingos-Masta/DiComics.git"
   },
-  "version": "0.0.1",
+  "version": "1.0.0",
   "main": "electron/main.js",
   "scripts": {
     "ng": "ng",
@@ -16,7 +16,10 @@
     "test": "ng test",
     "electron": "electron .",
     "electron-dev": "concurrently \"ng serve\" \"wait-on http://localhost:4200 && electron .\"",
-    "electron-build": "ng build --base-href ./ && electron-builder"
+    "electron-build": "ng build --base-href ./ && electron-builder",
+    "ng:build": "ng build --configuration production",
+    "electron:start": "npm run ng:build && electron ./electron/main.js",
+    "dist": "npm run ng:build && electron-builder"
   },
   "prettier": {
     "overrides": [
@@ -71,23 +74,36 @@
     "wait-on": "^9.0.3"
   },
   "build": {
-    "appId": "com.bdhqreader.app",
-    "productName": "dicomics",
+    "appId": "com.bdhqreader.dicomics",
+    "productName": "DIComics",
+    "executableName": "DIComics",
     "directories": {
       "output": "dist",
-      "buildResources": "assets"
+      "buildResources": "electron/build"
     },
     "files": [
+      "!dist${/*}",
+      "dist/dicomics/**/*",
       "electron/**/*",
-      "dist/**/*"
+      "electron/main.js",
+      "electron/preload.js",
+      "package.json"
     ],
     "win": {
       "target": "nsis",
       "icon": "assets/icon.ico"
     },
     "mac": {
-      "target": "dmg",
-      "icon": "assets/icon.icns"
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "icon": "build/icon.icns",
+      "category": "public.app-category.utilities"
     },
     "linux": {
       "target": "AppImage"
